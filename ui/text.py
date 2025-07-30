@@ -94,4 +94,4 @@ class Info(Text_Display):
         elif noti == 4:
             self.write_text_content(f"Agent dies. Press Enter to return to menu.", BOARD_APPEEAR_WIDTH, SHOW_NOTI_HEIGHT)
     
-    #def showFull()
+ 

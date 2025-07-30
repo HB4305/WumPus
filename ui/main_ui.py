@@ -3,12 +3,11 @@ from pygame.locals import *
 #from constants import *
 from ui.constants import *
 from ui.choice import *
-from ui.credit import *
 from ui.image import *
 
 pygame.init()
 screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
-title = pygame.display.set_caption('Logical Agent - Wumpus World')
+title = pygame.display.set_caption('WumPus Game')
 
 def showWumpusWorld(choose_map_result, map):
     M1 = Map(screen, map)
@@ -163,9 +162,8 @@ def showAgentMove(choose_map_result, path, m, level):
 def showMenu():
     showMenuBackground(screen)
     choose_option = None
-    menuChoice = ['Run Map', 'Credit', 'Exit']
-    menu = Choice(screen, menuChoice, 'Logical Agent - Wumpus World')
-    credit = Credit(screen)
+    menuChoice = ['Play', 'Quit']
+    menu = Choice(screen, menuChoice, 'WumPus Game')
     map_choose_option = None
     mapChoice = ['Map 01', 'Map 02', 'Map 03', 'Map 04', 'Map 05']
     mapMenu = Choice(screen, mapChoice, '')
@@ -210,9 +208,6 @@ def showMenu():
                 if is_right:
                     choose_option = mapMenu.get_next_to(-1, 0)
             if choose_option == 1:
-                credit.display_credit(is_left)
-                choose_option = credit.get_back_to()
-            if choose_option == 2:
                 pygame.quit()
                 sys.exit()
             if choose_option == -1: # input page 2
