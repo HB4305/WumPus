@@ -1,0 +1,5 @@
+Map 1:
+Map 2: The Goal is deep inside the map with many Wumpus
+Map 3: There are many goal, but have to update knowledgebase or agent health to get them. At the start have 3 poison gas, agent have to pass them to go deeper
+Map 4:
+Map 5:
