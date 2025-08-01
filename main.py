@@ -299,6 +299,42 @@ from utils.write_output import write_output
 #     write_output(file_path=output_filepath, agent=agent, RES=RESULT)
 
 #  new Kiệt
+from wumpus.environment import Environment
+from wumpus.inference import InferenceEngine
+from wumpus.agent import Agent
+from wumpus.planner import a_star
+from wumpus.utils import get_neighbors
+
+def heuristic(pos):
+    # Hàm ước lượng đơn giản: khoảng cách Manhattan về (0, 0)
+    x, y = pos
+    return x + y
+
+def apply_map_to_environment(map_data, env):
+    symbol_map = {
+        'P': 'pit',
+        'W': 'wumpus',
+        'G': 'gold'
+    }
+
+    for i in range(env.size):
+        for j in range(env.size):
+            cell = env.grid[i][j]
+            symbols = map_data[i][j]
+
+            if 'P' in symbols:
+                cell.pit = True
+                for nx, ny in get_neighbors((i, j), env.size):
+                    env.grid[nx][ny].breeze = True
+            if 'W' in symbols:
+                cell.wumpus = True
+                for nx, ny in get_neighbors((i, j), env.size):
+                    env.grid[nx][ny].stench = True
+            if 'G' in symbols:
+                cell.gold = True
+                cell.glitter = True
+
+
 def main():
     choose_map_result = main_ui.showMenu() + 1
     file_path = f"input/map{choose_map_result}.txt"
@@ -310,58 +346,40 @@ def main():
     program.MAPS.append(copy.deepcopy(program.cells))
 
     size = program.map_size
-    if isinstance(size, int):
-        size = (size, size)
+    
+    # Tạo môi trường giả lập từ map đọc được
+    env = Environment(size=size)
+    apply_map_to_environment(map_data, env)  
 
-    agent = Agent(map_size=size)
 
-    print("Agent starting position:", agent.position)
+    # Khởi tạo inference engine và agent
+    inference = InferenceEngine(size=size)
+    agent = Agent(env, inference)
 
-    percepts = program.get_percepts(*agent.position)
-    full_path = []
-
-    while True:
-        action = agent.act(percepts)
-        full_path.append((agent.position, action))
-
-        if action == "Climb":
-            break
-        elif action == "Grab":
-            percepts = program.get_percepts(agent.position)
-            continue
-        elif action == "Shoot":
-            result = program.shoot(agent.position)
-            if result:
-                percepts = {'scream': True}
-            else:
-                percepts = {}
-            continue
-
-        # Di chuyển agent
-        new_pos = agent.position
-        percepts = program.get_percepts(new_pos)
-
-    # Tính điểm
+    # Lưu lại bước đi của agent
     RESULT = []
-    point = 0
-    step = 0
-    has_gold = False
+    MAX_STEP = 100
+    step_count = 0
 
-    for pos, act in full_path:
-        if act == "Grab":
-            point += 10
-            has_gold = True
-        elif act == "Shoot":
-            point -= 10
-        elif act == "Climb":
-            if has_gold:
-                point += 1000
-        elif act.startswith("Move"):
-            point -= 1
-        elif act.startswith("Turn"):
-            point -= 1
-        step += 1
-        RESULT.append((pos, act, point, step))
+    while not agent.finished() and step_count < MAX_STEP:
+        action = agent.step()
+        RESULT.append(((agent.x, agent.y), action))
+        step_count += 1
+
+        if agent.has_gold:
+            # Tìm đường quay về bằng A*
+            return_path = a_star(start=(agent.x, agent.y),
+                                 goal=(0, 0),
+                                 heuristic=heuristic,
+                                 is_safe=inference.is_safe,
+                                 size=size)
+            for pos in return_path[1:]:
+                agent.x, agent.y = pos
+                RESULT.append(((agent.x, agent.y), "RETURN"))
+            break
+
+    # Hiển thị bản đồ và hành trình
+    program.MAPS.append(copy.deepcopy(program.cells))  # map để truyền cho UI
 
     maps = copy.deepcopy(program.MAPS)
     main_ui.showWumpusWorld(choose_map_result, map_data)

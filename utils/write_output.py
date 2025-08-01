@@ -20,8 +20,8 @@ def write_output(file_path: str, agent: Agent, RES):
         ):
             file.write("Agent successfully climbs out the cave. You win !!!\n")
             file.write(f"SCORE: {agent.point}\n")
-            file.write(f"HEALTH: {agent.current_hp}\n")
+            # file.write(f"HEALTH: {agent.current_hp}\n")
         else:
             file.write("Agent dies. You lose !!!\n")
             file.write(f"SCORE: {agent.point}\n")
-            file.write(f"HEALTH: {agent.current_hp}\n")
+            # file.write(f"HEALTH: {agent.current_hp}\n")

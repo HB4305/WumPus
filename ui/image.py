@@ -78,17 +78,17 @@ class ImageElement:
         self.breeze_img = pygame.image.load('ui/assets/breeze.png')
         self.breeze_img = pygame.transform.scale(self.breeze_img, self.cell_size)
 
-        #https://en.ac-illust.com/clip-art/22263264/poisonous-gas
-        self.poisonous_gas_img = pygame.image.load('ui/assets/poisonous_gas.png')
-        self.poisonous_gas_img = pygame.transform.scale(self.poisonous_gas_img, self.cell_size)
-        self.whiff_img = pygame.image.load('ui/assets/whiff.png')
-        self.whiff_img = pygame.transform.scale(self.whiff_img, self.cell_size)
+        # #https://en.ac-illust.com/clip-art/22263264/poisonous-gas
+        # self.poisonous_gas_img = pygame.image.load('ui/assets/poisonous_gas.png')
+        # self.poisonous_gas_img = pygame.transform.scale(self.poisonous_gas_img, self.cell_size)
+        # self.whiff_img = pygame.image.load('ui/assets/whiff.png')
+        # self.whiff_img = pygame.transform.scale(self.whiff_img, self.cell_size)
 
-        #https://pngtree.com/freepng/potion-mysterious-magic-potion-bottle_6838219.html
-        self.healing_potion_img = pygame.image.load('ui/assets/healing_potion.png')
-        self.healing_potion_img = pygame.transform.scale(self.healing_potion_img, self.cell_size)
-        self.glow_img = pygame.image.load('ui/assets/glow.png')
-        self.glow_img = pygame.transform.scale(self.glow_img, self.cell_size)
+        # #https://pngtree.com/freepng/potion-mysterious-magic-potion-bottle_6838219.html
+        # self.healing_potion_img = pygame.image.load('ui/assets/healing_potion.png')
+        # self.healing_potion_img = pygame.transform.scale(self.healing_potion_img, self.cell_size)
+        # self.glow_img = pygame.image.load('ui/assets/glow.png')
+        # self.glow_img = pygame.transform.scale(self.glow_img, self.cell_size)
 
     
     # Show images
