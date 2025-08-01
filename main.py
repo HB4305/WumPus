@@ -1,9 +1,9 @@
-# from algorithms.program import Program
-# from algorithms.agent import Agent
-# from algorithms.a_star import create_graph, a_star
-# import copy
-# from ui import main_ui
-# from utils.write_output import write_output
+from algorithms.program import Program
+from algorithms.agent import Agent
+from algorithms.a_star import create_graph, a_star
+import copy
+from ui import main_ui
+from utils.write_output import write_output
 
 
 # def main():
@@ -185,14 +185,120 @@
 #     while True:
 #         main()
 
-# Kiệt
-from algorithms.program import Program
-from algorithms.agent import Agent
-from algorithms.a_star import create_graph, a_star
-import copy
-from ui import main_ui
-from utils.write_output import write_output
+# # Kiệt
+# from algorithms.program import Program
+# from algorithms.agent import Agent
+# from algorithms.a_star import create_graph, a_star
+# import copy
+# from ui import main_ui
+# from utils.write_output import write_output
 
+# def main():
+#     choose_map_result = main_ui.showMenu() + 1
+#     file_path = f"input/map{choose_map_result}.txt"
+#     output_filepath = f"output/result{choose_map_result}.txt"
+
+#     program = Program(file_path)
+#     ma = program.return_map_test()
+#     map = copy.deepcopy(ma)
+#     program.MAPS.append(copy.deepcopy(program.cells))
+
+#     agent = Agent(map_size=program.map_size)
+#     agent.dfs(program)
+
+#     for cell in agent.maybe_wumpus:
+#         if cell not in agent.path and cell not in agent.sure_wumpus:
+#             agent.sure_wumpus.append(cell)
+
+#     for cell in agent.maybe_pit:
+#         if cell not in agent.path and cell not in agent.sure_pit:
+#             agent.sure_pit.append(cell)
+
+#     graph1 = create_graph(agent.path, agent.map_size)
+#     graph2 = create_graph(agent.path, agent.map_size)
+#     agent.shoot_process(program, graph1)
+#     agent.path.append((0, 0))
+
+#     primary_path = []
+#     main_ui.showWumpusWorld(choose_map_result, map)
+
+#     for i in range(len(agent.path) - 1):
+#         path_with_info = []
+#         current = agent.path[i]
+#         nextt = agent.path[i + 1]
+#         tmp_path = a_star(graph2, current, nextt, agent, program)
+
+#         if tmp_path == []:
+#             graph2 = graph1
+#             tmp_path = a_star(graph2, current, nextt, agent, program)
+
+#         for j in range(len(tmp_path) - 1):
+#             action = []
+#             if tmp_path[j] in agent.grab_gold:
+#                 action.append("Grab Gold")
+#                 agent.grab_gold.remove(tmp_path[j])
+
+#             vect = (
+#                 tmp_path[j + 1][0] - tmp_path[j][0],
+#                 tmp_path[j + 1][1] - tmp_path[j][1],
+#             )
+
+#             if (vect[0] * agent.direction[0]) + (vect[1] * agent.direction[1]) == 0:
+#                 if agent.direction == (1, 0):
+#                     action.append("Turn Right" if vect == (0, 1) else "Turn Left")
+#                 elif agent.direction == (-1, 0):
+#                     action.append("Turn Left" if vect == (0, 1) else "Turn Right")
+#                 elif agent.direction == (0, 1):
+#                     action.append("Turn Left" if vect == (1, 0) else "Turn Right")
+#                 else:
+#                     action.append("Turn Right" if vect == (1, 0) else "Turn Left")
+#                 agent.direction = vect
+#             elif (vect[0] * agent.direction[0]) + (vect[1] * agent.direction[1]) == -1:
+#                 action.extend(["Turn Left", "Turn Left"])
+#                 agent.direction = (-agent.direction[0], -agent.direction[1])
+
+#             if (tmp_path[j], tmp_path[j + 1]) in agent.shoot_act:
+#                 while (tmp_path[j], tmp_path[j + 1]) in agent.shoot_act:
+#                     action.append("Shoot")
+#                     agent.shoot_act.remove((tmp_path[j], tmp_path[j + 1]))
+#                 graph2[tmp_path[j][0]][tmp_path[j][1]] = 1
+
+#             action.append("Move Forward")
+#             path_with_info.append((tmp_path[j], action))
+
+#         if path_with_info:
+#             primary_path.append(path_with_info)
+
+#     if primary_path[-1][-1][0] in [(0, 1), (1, 0)]:
+#         primary_path.append([((0, 0), ["Climb"])])
+
+#     agent.point = 0
+#     RESULT = []
+#     map_index = 0
+
+#     for path in primary_path:
+#         for cell in path:
+#             for act in cell[1]:
+#                 if act == "Climb":
+#                     agent.point += 1000 if agent.has_gold else 0
+#                 elif act == "Shoot":
+#                     agent.point -= 10
+#                 elif act == "Grab Gold":
+#                     agent.point += 10
+#                     agent.has_gold = True
+#                 elif act.startswith("Turn"):
+#                     agent.point -= 1
+#                 elif act == "Move Forward":
+#                     agent.point -= 1
+
+#                 map_index += 1
+#                 RESULT.append((cell[0], act, agent.point, map_index))
+
+#     maps = copy.deepcopy(program.MAPS)
+#     main_ui.showAgentMove(choose_map_result, RESULT, maps, choose_map_result)
+#     write_output(file_path=output_filepath, agent=agent, RES=RESULT)
+
+#  new Kiệt
 def main():
     choose_map_result = main_ui.showMenu() + 1
     file_path = f"input/map{choose_map_result}.txt"
@@ -200,101 +306,65 @@ def main():
 
     program = Program(file_path)
     ma = program.return_map_test()
-    map = copy.deepcopy(ma)
+    map_data = copy.deepcopy(ma)
     program.MAPS.append(copy.deepcopy(program.cells))
 
-    agent = Agent(map_size=program.map_size)
-    agent.dfs(program)
+    size = program.map_size
+    if isinstance(size, int):
+        size = (size, size)
 
-    for cell in agent.maybe_wumpus:
-        if cell not in agent.path and cell not in agent.sure_wumpus:
-            agent.sure_wumpus.append(cell)
+    agent = Agent(map_size=size)
 
-    for cell in agent.maybe_pit:
-        if cell not in agent.path and cell not in agent.sure_pit:
-            agent.sure_pit.append(cell)
+    print("Agent starting position:", agent.position)
 
-    graph1 = create_graph(agent.path, agent.map_size)
-    graph2 = create_graph(agent.path, agent.map_size)
-    agent.shoot_process(program, graph1)
-    agent.path.append((0, 0))
+    percepts = program.get_percepts(*agent.position)
+    full_path = []
 
-    primary_path = []
-    main_ui.showWumpusWorld(choose_map_result, map)
+    while True:
+        action = agent.act(percepts)
+        full_path.append((agent.position, action))
 
-    for i in range(len(agent.path) - 1):
-        path_with_info = []
-        current = agent.path[i]
-        nextt = agent.path[i + 1]
-        tmp_path = a_star(graph2, current, nextt, agent, program)
+        if action == "Climb":
+            break
+        elif action == "Grab":
+            percepts = program.get_percepts(agent.position)
+            continue
+        elif action == "Shoot":
+            result = program.shoot(agent.position)
+            if result:
+                percepts = {'scream': True}
+            else:
+                percepts = {}
+            continue
 
-        if tmp_path == []:
-            graph2 = graph1
-            tmp_path = a_star(graph2, current, nextt, agent, program)
+        # Di chuyển agent
+        new_pos = agent.position
+        percepts = program.get_percepts(new_pos)
 
-        for j in range(len(tmp_path) - 1):
-            action = []
-            if tmp_path[j] in agent.grab_gold:
-                action.append("Grab Gold")
-                agent.grab_gold.remove(tmp_path[j])
-
-            vect = (
-                tmp_path[j + 1][0] - tmp_path[j][0],
-                tmp_path[j + 1][1] - tmp_path[j][1],
-            )
-
-            if (vect[0] * agent.direction[0]) + (vect[1] * agent.direction[1]) == 0:
-                if agent.direction == (1, 0):
-                    action.append("Turn Right" if vect == (0, 1) else "Turn Left")
-                elif agent.direction == (-1, 0):
-                    action.append("Turn Left" if vect == (0, 1) else "Turn Right")
-                elif agent.direction == (0, 1):
-                    action.append("Turn Left" if vect == (1, 0) else "Turn Right")
-                else:
-                    action.append("Turn Right" if vect == (1, 0) else "Turn Left")
-                agent.direction = vect
-            elif (vect[0] * agent.direction[0]) + (vect[1] * agent.direction[1]) == -1:
-                action.extend(["Turn Left", "Turn Left"])
-                agent.direction = (-agent.direction[0], -agent.direction[1])
-
-            if (tmp_path[j], tmp_path[j + 1]) in agent.shoot_act:
-                while (tmp_path[j], tmp_path[j + 1]) in agent.shoot_act:
-                    action.append("Shoot")
-                    agent.shoot_act.remove((tmp_path[j], tmp_path[j + 1]))
-                graph2[tmp_path[j][0]][tmp_path[j][1]] = 1
-
-            action.append("Move Forward")
-            path_with_info.append((tmp_path[j], action))
-
-        if path_with_info:
-            primary_path.append(path_with_info)
-
-    if primary_path[-1][-1][0] in [(0, 1), (1, 0)]:
-        primary_path.append([((0, 0), ["Climb"])])
-
-    agent.point = 0
+    # Tính điểm
     RESULT = []
-    map_index = 0
+    point = 0
+    step = 0
+    has_gold = False
 
-    for path in primary_path:
-        for cell in path:
-            for act in cell[1]:
-                if act == "Climb":
-                    agent.point += 1000 if agent.has_gold else 0
-                elif act == "Shoot":
-                    agent.point -= 10
-                elif act == "Grab Gold":
-                    agent.point += 10
-                    agent.has_gold = True
-                elif act.startswith("Turn"):
-                    agent.point -= 1
-                elif act == "Move Forward":
-                    agent.point -= 1
-
-                map_index += 1
-                RESULT.append((cell[0], act, agent.point, map_index))
+    for pos, act in full_path:
+        if act == "Grab":
+            point += 10
+            has_gold = True
+        elif act == "Shoot":
+            point -= 10
+        elif act == "Climb":
+            if has_gold:
+                point += 1000
+        elif act.startswith("Move"):
+            point -= 1
+        elif act.startswith("Turn"):
+            point -= 1
+        step += 1
+        RESULT.append((pos, act, point, step))
 
     maps = copy.deepcopy(program.MAPS)
+    main_ui.showWumpusWorld(choose_map_result, map_data)
     main_ui.showAgentMove(choose_map_result, RESULT, maps, choose_map_result)
     write_output(file_path=output_filepath, agent=agent, RES=RESULT)
 

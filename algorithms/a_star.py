@@ -146,51 +146,84 @@ def create_graph(list_cell, map_size):
     return graph
 
 
-def a_star(graph, start, goal, agent, program):
-    map_size = len(graph[0])
-    visited = [[False] * map_size for _ in range(map_size)]
-    cost = [[float("inf")] * map_size for _ in range(map_size)]
-    parent = [[(-1, -1)] * map_size for _ in range(map_size)]
+# def a_star(graph, start, goal, agent, program):
+#     map_size = len(graph[0])
+#     visited = [[False] * map_size for _ in range(map_size)]
+#     cost = [[float("inf")] * map_size for _ in range(map_size)]
+#     parent = [[(-1, -1)] * map_size for _ in range(map_size)]
 
-    cost[start[0]][start[1]] = 0
-    frontier = [(0, start)]  # (priority, position)
+#     cost[start[0]][start[1]] = 0
+#     frontier = [(0, start)]  # (priority, position)
 
-    direction = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-    prev = (-1, -1)
+#     direction = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+#     prev = (-1, -1)
+
+#     while frontier:
+#         _, current = heapq.heappop(frontier)
+#         if visited[current[0]][current[1]]:
+#             continue
+#         visited[current[0]][current[1]] = True
+
+#         for dy, dx in direction:
+#             ny, nx = current[0] + dy, current[1] + dx
+#             if 0 <= ny < map_size and 0 <= nx < map_size:
+#                 if not visited[ny][nx] and graph[ny][nx] != -1:
+#                     new_cost = cost[current[0]][current[1]] + 1
+#                     if new_cost < cost[ny][nx]:
+#                         cost[ny][nx] = new_cost
+#                         parent[ny][nx] = current
+
+#                         heuristic = abs(ny - goal[0]) + abs(nx - goal[1])
+#                         if (prev[0] - current[0]) * (current[0] - ny) + (prev[1] - current[1]) * (current[1] - nx) == 0:
+#                             heuristic += 10
+
+#                         heapq.heappush(frontier, (new_cost + heuristic, (ny, nx)))
+
+#         if visited[goal[0]][goal[1]]:
+#             break
+
+#         prev = current
+
+#     if not visited[goal[0]][goal[1]]:
+#         return []
+
+#     path = []
+#     while goal != start:
+#         path.append(goal)
+#         goal = parent[goal[0]][goal[1]]
+#     path.append(start)
+#     path.reverse()
+#     return path
+
+def a_star(start, goal, kb):
+    def h(pos):
+        return abs(pos[0] - goal[0]) + abs(pos[1] - goal[1])
+
+    frontier = [(h(start), 0, start, [])]
+    explored = set()
 
     while frontier:
-        _, current = heapq.heappop(frontier)
-        if visited[current[0]][current[1]]:
+        f, cost, current, path = heapq.heappop(frontier)
+        if current == goal:
+            return path
+
+        if current in explored:
             continue
-        visited[current[0]][current[1]] = True
+        explored.add(current)
 
-        for dy, dx in direction:
-            ny, nx = current[0] + dy, current[1] + dx
-            if 0 <= ny < map_size and 0 <= nx < map_size:
-                if not visited[ny][nx] and graph[ny][nx] != -1:
-                    new_cost = cost[current[0]][current[1]] + 1
-                    if new_cost < cost[ny][nx]:
-                        cost[ny][nx] = new_cost
-                        parent[ny][nx] = current
+        for neighbor in get_neighbors(current, kb):
+            if neighbor in explored:
+                continue
+            heapq.heappush(frontier, (cost + 1 + h(neighbor), cost + 1, neighbor, path + [neighbor]))
 
-                        heuristic = abs(ny - goal[0]) + abs(nx - goal[1])
-                        if (prev[0] - current[0]) * (current[0] - ny) + (prev[1] - current[1]) * (current[1] - nx) == 0:
-                            heuristic += 10
+    return []
 
-                        heapq.heappush(frontier, (new_cost + heuristic, (ny, nx)))
-
-        if visited[goal[0]][goal[1]]:
-            break
-
-        prev = current
-
-    if not visited[goal[0]][goal[1]]:
-        return []
-
-    path = []
-    while goal != start:
-        path.append(goal)
-        goal = parent[goal[0]][goal[1]]
-    path.append(start)
-    path.reverse()
-    return path
+def get_neighbors(pos, kb):
+    x, y = pos
+    directions = [(0,1), (1,0), (0,-1), (-1,0)]
+    neighbors = []
+    for dx, dy in directions:
+        nx, ny = x + dx, y + dy
+        if (nx, ny) in kb and kb[(nx, ny)]['safe'] is True:
+            neighbors.append((nx, ny))
+    return neighbors

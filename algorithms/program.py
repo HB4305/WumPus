@@ -211,3 +211,16 @@ class Program:
 
     def copy(self):
         return copy.deepcopy(self)
+
+    def get_percepts(self, y, x):
+        """
+        Trả về các percepts tại ô (y, x) cho agent.
+        """
+        cell = self.cells[y][x]
+        return {
+            "stench": cell.is_stench,
+            "breeze": cell.is_breeze,
+            "whiff": cell.is_whiff,
+            "glow": cell.is_glow,
+            "scream": cell.is_scream
+        }
