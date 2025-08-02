@@ -1,102 +1,103 @@
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
-(2, 1) : MOVE to (1, 0)
-(1, 1) : MOVE to (0, 0)
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
+(1, 1) : STAY
 -------------------------
 Agent dies. You lose !!!
+SCORE: 0
