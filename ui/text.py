@@ -84,7 +84,7 @@ class Info(Text_Display):
         area = (BOARD_APPEEAR_WIDTH, SHOW_NOTI_HEIGHT, WINDOW_WIDTH-BOARD_APPEEAR_WIDTH, WINDOW_HEIGHT - SHOW_NOTI_HEIGHT)
         showGameBackground(self.screen, area, self.level_background)
         if noti == 0:
-            self.write_text_content(f"Press Enter to run the problem.", BOARD_APPEEAR_WIDTH, SHOW_NOTI_HEIGHT)
+            self.write_text_content(f"Agent will start moving in 1 second...", BOARD_APPEEAR_WIDTH, SHOW_NOTI_HEIGHT)
         elif noti == 1:
             self.write_text_content(f"Agent is moving. Press Enter to return to menu.", BOARD_APPEEAR_WIDTH, SHOW_NOTI_HEIGHT)
         elif noti == 2:
@@ -93,5 +93,4 @@ class Info(Text_Display):
             self.write_text_content(f"End game. Press Enter to return to menu.", BOARD_APPEEAR_WIDTH, SHOW_NOTI_HEIGHT)
         elif noti == 4:
             self.write_text_content(f"Agent dies. Press Enter to return to menu.", BOARD_APPEEAR_WIDTH, SHOW_NOTI_HEIGHT)
-    
- 
+

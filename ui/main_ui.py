@@ -17,15 +17,9 @@ def showWumpusWorld(choose_map_result, map):
     I1.showLeftBar(choose_map_result, point=10000, HP=100, H_Ps=0)
     I1.showNoti(0)
     pygame.display.update()
-    while True:
-        for event in pygame.event.get():
-            if event.type == QUIT:
-                pygame.quit()
-                sys.exit()
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_RETURN or event.key == K_KP_ENTER:
-                    return
-        pygame.display.update()
+
+    # Wait 2 seconds before starting agent movement
+    pygame.time.wait(2000)
 
 # def showAgentMove(choose_map_result, path, m, level):
 #     # path: (pos-y, pos-x), action, point, HP, Healing Potion(s)
