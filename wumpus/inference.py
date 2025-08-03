@@ -1,165 +1,171 @@
 # from .utils import get_neighbors
+# from collections import defaultdict
 
 # class InferenceEngine:
 #     def __init__(self, size):
 #         self.size = size
-#         self.safe = set()
-#         self.unsafe = set()
-#         self.unknown = set((i, j) for i in range(size) for j in range(size))
-#         self.percepts = dict()
-
-#         # ✅ Thêm 2 thuộc tính này để tránh lỗi AttributeError
-#         self.possible_wumpus_cells = set()
-#         self.confirmed_wumpus_cells = set()
-#         # ✅ Đánh dấu (0, 0) là safe ngay từ đầu
-#         self.safe.add((0, 0))
 #         self.visited = set()
-#         self.safe_cells = set()
+#         self.safe = set([(0, 0)])
+#         self.unknown = set((i, j) for i in range(size) for j in range(size))
+#         self.knowledge = defaultdict(lambda: {
+#             "possible_pit": False,
+#             "possible_wumpus": False,
+#             "confirmed_pit": False,
+#             "confirmed_wumpus": False,
+#             "safe": False
+#         })
+#         self.percepts = {}
 
-#     def update_knowledge(self, position, percept):
-#         self.percepts[position] = percept
-#         self.visited.add(position)
-#         self.safe_cells.add(position)  # ✅ phải có dòng này!
+#     def update_knowledge(self, pos, percept):
+#         self.percepts[pos] = percept
+#         self.visited.add(pos)
+#         self.safe.add(pos)
+#         self.unknown.discard(pos)
+#         self.knowledge[pos]["safe"] = True
 
+#         neighbors = get_neighbors(pos, self.size)
+
+#         # Nếu không có breeze hoặc stench → tất cả neighbors an toàn
 #         if not percept["breeze"] and not percept["stench"]:
-#             for n in get_neighbors(position, self.size):
-#                 self.safe.add(n)
-#                 self.unknown.discard(n)
-#         else:
-#             self.unknown.add(position)
-
-#         # ✅ Cập nhật các ô nghi ngờ Wumpus nếu có stench
-#         if percept["stench"]:
-#             neighbors = get_neighbors(position, self.size)
 #             for n in neighbors:
-#                 if n not in self.safe:
-#                     self.possible_wumpus_cells.add(n)
+#                 self.safe.add(n)
+#                 self.knowledge[n]["safe"] = True
+#                 self.knowledge[n]["possible_pit"] = False
+#                 self.knowledge[n]["possible_wumpus"] = False
+#                 self.unknown.discard(n)
 
+#         # Nếu có breeze → đánh dấu neighbors là "có thể có pit"
+#         if percept["breeze"]:
+#             for n in neighbors:
+#                 if n not in self.safe and n not in self.visited:
+#                     self.knowledge[n]["possible_pit"] = True
 
-#         # ✅ Suy luận đơn giản: nếu chỉ còn đúng 1 ô nghi Wumpus và nó nằm trong tất cả stench, ta xác nhận nó
-#         self.infer_wumpus_certainty()
+#         # Nếu có stench → đánh dấu neighbors là "có thể có wumpus"
+#         if percept["stench"]:
+#             for n in neighbors:
+#                 if n not in self.safe and n not in self.visited:
+#                     self.knowledge[n]["possible_wumpus"] = True
 
-#     def infer_wumpus_certainty(self):
+#         # Nếu đã đến ô không có stench nhưng trước đó nghi ngờ Wumpus ở neighbor → loại bỏ
+#         if not percept["stench"]:
+#             for n in neighbors:
+#                 self.knowledge[n]["possible_wumpus"] = False
+
+#         if not percept["breeze"]:
+#             for n in neighbors:
+#                 self.knowledge[n]["possible_pit"] = False
+
+#         # Sau đó cố gắng infer chắc chắn pit/wumpus từ giao nhau
+#         self.infer_certain_threats()
+
+#     def infer_certain_threats(self):
+#         # Tìm tất cả vị trí có stench
 #         stench_positions = [pos for pos, p in self.percepts.items() if p["stench"]]
-#         if not stench_positions:
-#             return
+#         if stench_positions:
+#             common_wumpus = set(get_neighbors(stench_positions[0], self.size))
+#             for pos in stench_positions[1:]:
+#                 common_wumpus &= set(get_neighbors(pos, self.size))
 
-#         # Giao nhau các ô lân cận của tất cả vị trí có stench
-#         possible = set(get_neighbors(stench_positions[0], self.size))
-#         for pos in stench_positions[1:]:
-#             possible &= set(get_neighbors(pos, self.size))
+#             # Loại bỏ các ô đã an toàn
+#             common_wumpus = {pos for pos in common_wumpus if not self.knowledge[pos]["safe"]}
+#             if len(common_wumpus) == 1:
+#                 pos = list(common_wumpus)[0]
+#                 self.knowledge[pos]["confirmed_wumpus"] = True
 
-#         # Loại trừ các ô đã xác định an toàn
-#         possible -= self.safe
+#         # Tương tự cho pit
+#         breeze_positions = [pos for pos, p in self.percepts.items() if p["breeze"]]
+#         if breeze_positions:
+#             common_pit = set(get_neighbors(breeze_positions[0], self.size))
+#             for pos in breeze_positions[1:]:
+#                 common_pit &= set(get_neighbors(pos, self.size))
 
-#         if len(possible) == 1:
-#             self.confirmed_wumpus_cells = possible
-
-#     def get_possible_wumpus(self):
-#         return list(self.possible_wumpus_cells)
-
-#     def is_wumpus_certain(self, pos):
-#         return pos in self.confirmed_wumpus_cells
+#             common_pit = {pos for pos in common_pit if not self.knowledge[pos]["safe"]}
+#             if len(common_pit) == 1:
+#                 pos = list(common_pit)[0]
+#                 self.knowledge[pos]["confirmed_pit"] = True
 
 #     def is_safe(self, pos):
-#         return pos in self.safe
-from .utils import get_neighbors
-from collections import defaultdict
+#         return self.knowledge[pos]["safe"] and not self.knowledge[pos]["confirmed_pit"] and not self.knowledge[pos]["confirmed_wumpus"]
 
-class InferenceEngine:
+#     def is_possible_pit(self, pos):
+#         return self.knowledge[pos]["possible_pit"]
+
+#     def is_possible_wumpus(self, pos):
+#         return self.knowledge[pos]["possible_wumpus"]
+
+#     def is_confirmed_pit(self, pos):
+#         return self.knowledge[pos]["confirmed_pit"]
+
+#     def is_confirmed_wumpus(self, pos):
+#         return self.knowledge[pos]["confirmed_wumpus"]
+from collections import defaultdict
+from .utils import get_neighbors
+
+class Inference:
     def __init__(self, size):
         self.size = size
-        self.visited = set()
-        self.safe = set([(0, 0)])
-        self.unknown = set((i, j) for i in range(size) for j in range(size))
-        self.knowledge = defaultdict(lambda: {
-            "possible_pit": False,
-            "possible_wumpus": False,
-            "confirmed_pit": False,
-            "confirmed_wumpus": False,
-            "safe": False
+        self.kb = {}  # {(x, y): {'visited': bool, 'safe': bool, 'possible_pit': bool, 'possible_wumpus': bool}}
+        self.percepts = {}  # {(x, y): {'stench': bool, 'breeze': bool, 'glitter': bool}}
+
+    def update_knowledge(self, position, percept):
+        x, y = position
+        self.kb.setdefault((x, y), {
+            'visited': True, 'safe': True,
+            'possible_pit': False, 'possible_wumpus': False
         })
-        self.percepts = {}
+        self.kb[(x, y)]['visited'] = True
+        self.kb[(x, y)]['safe'] = True  # đã đi được tới thì nó an toàn
 
-    def update_knowledge(self, pos, percept):
-        self.percepts[pos] = percept
-        self.visited.add(pos)
-        self.safe.add(pos)
-        self.unknown.discard(pos)
-        self.knowledge[pos]["safe"] = True
+        # lưu percept
+        self.percepts[(x, y)] = percept
 
-        neighbors = get_neighbors(pos, self.size)
+        # lấy hàng xóm
+        neighbors = get_neighbors((x, y), self.size)
 
-        # Nếu không có breeze hoặc stench → tất cả neighbors an toàn
-        if not percept["breeze"] and not percept["stench"]:
-            for n in neighbors:
-                self.safe.add(n)
-                self.knowledge[n]["safe"] = True
-                self.knowledge[n]["possible_pit"] = False
-                self.knowledge[n]["possible_wumpus"] = False
-                self.unknown.discard(n)
+        # nếu không có breeze, các ô xung quanh không có pit
+        if not percept['breeze']:
+            for nx, ny in neighbors: # bỏ nghi ngờ mấy ô xung quanh là pit
+                self._ensure_kb((nx, ny))
+                self.kb[(nx, ny)]['possible_pit'] = False
 
-        # Nếu có breeze → đánh dấu neighbors là "có thể có pit"
-        if percept["breeze"]:
-            for n in neighbors:
-                if n not in self.safe and n not in self.visited:
-                    self.knowledge[n]["possible_pit"] = True
+        # nếu không có stench, các ô xung quanh không có wumpus
+        if not percept['stench']:
+            for nx, ny in neighbors: # bỏ nghi ngờ mấy ô xung quanh là wumbus
+                self._ensure_kb((nx, ny))
+                self.kb[(nx, ny)]['possible_wumpus'] = False
+                # Nếu không có cả stench lẫn breeze thì safe
+                if not self.kb[(nx, ny)]['possible_pit']:
+                    self.kb[(nx, ny)]['safe'] = True
 
-        # Nếu có stench → đánh dấu neighbors là "có thể có wumpus"
-        if percept["stench"]:
-            for n in neighbors:
-                if n not in self.safe and n not in self.visited:
-                    self.knowledge[n]["possible_wumpus"] = True
+        # nếu có breeze hoặc stench, không khẳng định chắc chắn được nên đánh dấu là có thể nguy hiểm
+        if percept['breeze']:
+            for nx, ny in neighbors:
+                self._ensure_kb((nx, ny))
+                if not self.kb[(nx, ny)]['visited']:
+                    self.kb[(nx, ny)]['possible_pit'] = True
 
-        # Nếu đã đến ô không có stench nhưng trước đó nghi ngờ Wumpus ở neighbor → loại bỏ
-        if not percept["stench"]:
-            for n in neighbors:
-                self.knowledge[n]["possible_wumpus"] = False
+        if percept['stench']:
+            for nx, ny in neighbors:
+                self._ensure_kb((nx, ny))
+                if not self.kb[(nx, ny)]['visited']:
+                    self.kb[(nx, ny)]['possible_wumpus'] = True
 
-        if not percept["breeze"]:
-            for n in neighbors:
-                self.knowledge[n]["possible_pit"] = False
-
-        # Sau đó cố gắng infer chắc chắn pit/wumpus từ giao nhau
-        self.infer_certain_threats()
-
-    def infer_certain_threats(self):
-        # Tìm tất cả vị trí có stench
-        stench_positions = [pos for pos, p in self.percepts.items() if p["stench"]]
-        if stench_positions:
-            common_wumpus = set(get_neighbors(stench_positions[0], self.size))
-            for pos in stench_positions[1:]:
-                common_wumpus &= set(get_neighbors(pos, self.size))
-
-            # Loại bỏ các ô đã an toàn
-            common_wumpus = {pos for pos in common_wumpus if not self.knowledge[pos]["safe"]}
-            if len(common_wumpus) == 1:
-                pos = list(common_wumpus)[0]
-                self.knowledge[pos]["confirmed_wumpus"] = True
-
-        # Tương tự cho pit
-        breeze_positions = [pos for pos, p in self.percepts.items() if p["breeze"]]
-        if breeze_positions:
-            common_pit = set(get_neighbors(breeze_positions[0], self.size))
-            for pos in breeze_positions[1:]:
-                common_pit &= set(get_neighbors(pos, self.size))
-
-            common_pit = {pos for pos in common_pit if not self.knowledge[pos]["safe"]}
-            if len(common_pit) == 1:
-                pos = list(common_pit)[0]
-                self.knowledge[pos]["confirmed_pit"] = True
+    def _ensure_kb(self, pos): # đảm bảo ô (x, y) đã có trong knowledge base
+        if pos not in self.kb:
+            self.kb[pos] = {
+                'visited': False,
+                'safe': False,
+                'possible_pit': False,
+                'possible_wumpus': False
+            }
 
     def is_safe(self, pos):
-        return self.knowledge[pos]["safe"] and not self.knowledge[pos]["confirmed_pit"] and not self.knowledge[pos]["confirmed_wumpus"]
+        self._ensure_kb(pos)
+        return self.kb[pos]['safe'] and not self.kb[pos]['possible_pit'] and not self.kb[pos]['possible_wumpus']
 
-    def is_possible_pit(self, pos):
-        return self.knowledge[pos]["possible_pit"]
+    def get_safe_unvisited_neighbors(self, current_pos): # tìm ô an toàn chưa đi
+        neighbors = get_neighbors(current_pos, self.size)
+        return [pos for pos in neighbors if self.is_safe(pos) and not self.kb[pos]['visited']]
 
-    def is_possible_wumpus(self, pos):
-        return self.knowledge[pos]["possible_wumpus"]
-
-    def is_confirmed_pit(self, pos):
-        return self.knowledge[pos]["confirmed_pit"]
-
-    def is_confirmed_wumpus(self, pos):
-        return self.knowledge[pos]["confirmed_wumpus"]
+    def get_kb(self):
+        return self.kb
