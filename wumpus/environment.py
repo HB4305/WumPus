@@ -131,6 +131,8 @@ class Environment:
         self.agent_dir = "EAST"
         self.arrow_available = True
         self.scream = False
+        self.gold_collected = False
+        self.agent_escaped = False
 
         self.place_entities(k, pit_prob)
 
@@ -160,16 +162,16 @@ class Environment:
         # place gold, can be at (0,0), chưa đọc tới
         gold_candidates = [
             (i, j) for i in range(self.size) for j in range(self.size)
-            if not self.grid[i][j].wumpus and not self.grid[i][j].pit
+            if not self.grid[j][i].wumpus and not self.grid[j][i].pit
         ]
         gold_x, gold_y = random.choice(gold_candidates)
-        self.grid[gold_x][gold_y].gold = True
-        self.grid[gold_x][gold_y].glitter = True
+        self.grid[gold_y][gold_x].gold = True
+        self.grid[gold_y][gold_x].glitter = True
 
     def get_percepts(self, x=None, y=None):
         if x is None or y is None:
             x, y = self.agent_pos
-        cell = self.grid[x][y]
+        cell = self.grid[y][x]
         return {
             "stench": cell.stench,
             "breeze": cell.breeze,
@@ -214,9 +216,26 @@ class Environment:
                 self.grid[x][y].wumpus = False
                 # remove stench
                 for nx, ny in get_neighbors((x, y), self.size):
-                    self.grid[nx][ny].stench = False
+                    self.grid[ny][nx].stench = False
                 scream = True
                 break
         self.scream = scream
         return {"scream": scream, **self.get_percepts()}
+
+    def grab_gold(self):
+        x, y = self.agent_pos
+        cell = self.grid[y][x]
+        if cell.gold:
+            self.gold_collected = True
+            cell.gold = False
+            cell.glitter = False
+            return {"grab_success": True, **self.get_percepts()} # grab thì bây cho hình rương được mở hay j he
+        return {"grab_success": False, **self.get_percepts()}
+
+    def climb_out(self): # chắc để bên agent quyết định có climb hay không
+        if self.agent_pos == (0, 0):
+            self.agent_escaped = True
+            return {"escaped": True, "has_gold": self.gold_collected}
+        return {"escaped": False}
+
 
