@@ -149,6 +149,52 @@ class Inference:
                 self._ensure_kb((nx, ny))
                 if not self.kb[(nx, ny)]['visited']:
                     self.kb[(nx, ny)]['possible_wumpus'] = True
+    
+    # chưa đọc ...
+    def infer_safety_from_multiple_sources(self):
+        # Với mỗi ô trong KB chưa visited, kiểm tra nếu nó bị loại trừ hoàn toàn là pit và wumpus
+        for (x, y), info in self.kb.items():
+            if info['visited']:
+                continue
+
+            if not info['possible_pit'] and not info['possible_wumpus']:
+                info['safe'] = True
+
+        # Ngoài ra, nếu 1 ô là ứng viên pit hoặc wumpus, nhưng có nhiều ô xung quanh đã loại trừ được,
+        # ta có thể suy luận rằng ứng viên còn lại là nguồn duy nhất => safe các ô khác
+
+        for (x, y), percept in self.percepts.items():
+            neighbors = get_neighbors((x, y), self.size)
+
+            # Nếu breeze: có thể có pit quanh đó
+            if percept['breeze']:
+                pit_candidates = [
+                    (nx, ny) for (nx, ny) in neighbors
+                    if self.kb.get((nx, ny), {}).get('possible_pit', False)
+                ]
+                if len(pit_candidates) == 1:
+                    # Chỉ có 1 ứng viên -> chắc chắn pit ở đó
+                    for (nx, ny) in neighbors:
+                        if (nx, ny) != pit_candidates[0]:
+                            self._ensure_kb((nx, ny))
+                            self.kb[(nx, ny)]['possible_pit'] = False
+                            if not self.kb[(nx, ny)]['possible_wumpus']:
+                                self.kb[(nx, ny)]['safe'] = True
+
+            # Tương tự với stench → wumpus
+            if percept['stench']:
+                wumpus_candidates = [
+                    (nx, ny) for (nx, ny) in neighbors
+                    if self.kb.get((nx, ny), {}).get('possible_wumpus', False)
+                ]
+                if len(wumpus_candidates) == 1:
+                    for (nx, ny) in neighbors:
+                        if (nx, ny) != wumpus_candidates[0]:
+                            self._ensure_kb((nx, ny))
+                            self.kb[(nx, ny)]['possible_wumpus'] = False
+                            if not self.kb[(nx, ny)]['possible_pit']:
+                                self.kb[(nx, ny)]['safe'] = True
+
 
     def _ensure_kb(self, pos): # đảm bảo ô (x, y) đã có trong knowledge base
         if pos not in self.kb:
