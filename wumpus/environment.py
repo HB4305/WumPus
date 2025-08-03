@@ -111,6 +111,7 @@
 import random
 from .utils import get_neighbors
 
+# toạ độ (x, y) x là cột y là dòng
 class Cell:
     def __init__(self):
         self.wumpus = False
@@ -122,7 +123,7 @@ class Cell:
         self.glitter = False
 
 class Environment:
-    def __init__(self, size=4, k=2, pit_prob=0.2):
+    def __init__(self, size=8, k=2, pit_prob=0.2):
         self.size = size
         self.grid = [[Cell() for _ in range(size)] for _ in range(size)]
         self.wumpus_positions = set()
@@ -138,15 +139,15 @@ class Environment:
 
     def place_entities(self, k, pit_prob):
         positions = [(i, j) for i in range(self.size) for j in range(self.size) if (i, j) != (0, 0)]
-        random.shuffle(positions)
+        random.shuffle(positions) # xáo trộn các ô N x N, i = x, j = y
 
         # place k wumpus
         for _ in range(k):
-            x, y = positions.pop()
-            self.grid[x][y].wumpus = True
+            x, y = positions.pop() # lấy ngẫu nhiên một ô từ danh sách
+            self.grid[y][x].wumpus = True
             self.wumpus_positions.add((x, y))
             for nx, ny in get_neighbors((x, y), self.size):
-                self.grid[nx][ny].stench = True
+                self.grid[ny][nx].stench = True
 
         # place pits
         for i in range(self.size):
@@ -154,9 +155,9 @@ class Environment:
                 if (i, j) != (0, 0) and random.random() < pit_prob and not self.grid[i][j].wumpus:
                     self.grid[i][j].pit = True
                     for nx, ny in get_neighbors((i, j), self.size):
-                        self.grid[nx][ny].breeze = True
+                        self.grid[ny][nx].breeze = True
 
-        # place gold, can be at (0,0)
+        # place gold, can be at (0,0), chưa đọc tới
         gold_candidates = [
             (i, j) for i in range(self.size) for j in range(self.size)
             if not self.grid[i][j].wumpus and not self.grid[i][j].pit
