@@ -1,9 +1,9 @@
-from algorithms.program import Program
-from algorithms.agent import Agent
-from algorithms.a_star import create_graph, a_star
-import copy
-from ui import main_ui
-from utils.write_output import write_output
+# from algorithms.program import Program
+# from algorithms.agent import Agent
+# from algorithms.a_star import create_graph, a_star
+# import copy
+# from ui import main_ui
+# from utils.write_output import write_output
 
 
 # def main():
@@ -299,92 +299,162 @@ from utils.write_output import write_output
 #     write_output(file_path=output_filepath, agent=agent, RES=RESULT)
 
 #  new Kiệt
+# from wumpus.environment import Environment
+# from wumpus.inference import InferenceEngine
+# from wumpus.agent import Agent
+# from wumpus.planner import a_star
+# from wumpus.utils import get_neighbors
+
+# def heuristic(pos):
+#     # Hàm ước lượng đơn giản: khoảng cách Manhattan về (0, 0)
+#     x, y = pos
+#     return x + y
+
+# def apply_map_to_environment(map_data, env):
+#     symbol_map = {
+#         'P': 'pit',
+#         'W': 'wumpus',
+#         'G': 'gold'
+#     }
+
+#     for i in range(env.size):
+#         for j in range(env.size):
+#             cell = env.grid[i][j]
+#             symbols = map_data[i][j]
+
+#             if 'P' in symbols:
+#                 cell.pit = True
+#                 for nx, ny in get_neighbors((i, j), env.size):
+#                     env.grid[nx][ny].breeze = True
+#             if 'W' in symbols:
+#                 cell.wumpus = True
+#                 for nx, ny in get_neighbors((i, j), env.size):
+#                     env.grid[nx][ny].stench = True
+#             if 'G' in symbols:
+#                 cell.gold = True
+#                 cell.glitter = True
+
+
+# def main():
+#     choose_map_result = main_ui.showMenu() + 1
+#     file_path = f"input/map{choose_map_result}.txt"
+#     output_filepath = f"output/result{choose_map_result}.txt"
+
+#     program = Program(file_path)
+#     ma = program.return_map_test()
+#     map_data = copy.deepcopy(ma)
+#     program.MAPS.append(copy.deepcopy(program.cells))
+
+#     size = program.map_size
+    
+#     # Tạo môi trường giả lập từ map đọc được
+#     env = Environment(size=size)
+#     apply_map_to_environment(map_data, env)  
+
+
+#     # Khởi tạo inference engine và agent
+#     inference = InferenceEngine(size=size)
+#     agent = Agent(env, inference)
+
+#     # Lưu lại bước đi của agent
+#     RESULT = []
+#     MAX_STEP = 100
+#     step_count = 0
+
+#     while not agent.finished() and step_count < MAX_STEP:
+#         action = agent.step()
+#         RESULT.append(((agent.x, agent.y), action))
+#         step_count += 1
+
+#         if agent.has_gold:
+#             # Tìm đường quay về bằng A*
+#             return_path = a_star(start=(agent.x, agent.y),
+#                                  goal=(0, 0),
+#                                  heuristic=heuristic,
+#                                  is_safe=inference.is_safe,
+#                                  size=size)
+#             for pos in return_path[1:]:
+#                 agent.x, agent.y = pos
+#                 RESULT.append(((agent.x, agent.y), "RETURN"))
+#             break
+
+#     # Hiển thị bản đồ và hành trình
+#     program.MAPS.append(copy.deepcopy(program.cells))  # map để truyền cho UI
+
+#     maps = copy.deepcopy(program.MAPS)
+#     main_ui.showWumpusWorld(choose_map_result, map_data)
+#     main_ui.showAgentMove(choose_map_result, RESULT, maps, choose_map_result)
+#     write_output(file_path=output_filepath, agent=agent, RES=RESULT)
+
+# if __name__ == "__main__":
+#     while True:
+#         main()
+
+
+# Bảo thêm
 from wumpus.environment import Environment
-from wumpus.inference import InferenceEngine
+from wumpus.inference import Inference
 from wumpus.agent import Agent
-from wumpus.planner import a_star
+from wumpus.algorithm import a_star
 from wumpus.utils import get_neighbors
+from ui import main_ui
+import copy
 
-def heuristic(pos):
-    # Hàm ước lượng đơn giản: khoảng cách Manhattan về (0, 0)
-    x, y = pos
-    return x + y
-
-def apply_map_to_environment(map_data, env):
-    symbol_map = {
-        'P': 'pit',
-        'W': 'wumpus',
-        'G': 'gold'
-    }
-
-    for i in range(env.size):
-        for j in range(env.size):
-            cell = env.grid[i][j]
-            symbols = map_data[i][j]
-
-            if 'P' in symbols:
-                cell.pit = True
-                for nx, ny in get_neighbors((i, j), env.size):
-                    env.grid[nx][ny].breeze = True
-            if 'W' in symbols:
-                cell.wumpus = True
-                for nx, ny in get_neighbors((i, j), env.size):
-                    env.grid[nx][ny].stench = True
-            if 'G' in symbols:
-                cell.gold = True
-                cell.glitter = True
-
+def heuristic(pos, goal=(0, 0)):
+    return abs(pos[0] - goal[0]) + abs(pos[1] - goal[1])
 
 def main():
-    choose_map_result = main_ui.showMenu() + 1
-    file_path = f"input/map{choose_map_result}.txt"
-    output_filepath = f"output/result{choose_map_result}.txt"
+    # Lấy thông tin cấu hình từ người dùng
+    size, pit_prob, wumpus_count = main_ui.showMenu()
 
-    program = Program(file_path)
-    ma = program.return_map_test()
-    map_data = copy.deepcopy(ma)
-    program.MAPS.append(copy.deepcopy(program.cells))
-
-    size = program.map_size
-    
-    # Tạo môi trường giả lập từ map đọc được
-    env = Environment(size=size)
-    apply_map_to_environment(map_data, env)  
-
-
-    # Khởi tạo inference engine và agent
-    inference = InferenceEngine(size=size)
+    # Tạo môi trường và agent
+    env = Environment(size=size, k=wumpus_count, pit_prob=pit_prob)
+    inference = Inference(size)
     agent = Agent(env, inference)
 
-    # Lưu lại bước đi của agent
-    RESULT = []
-    MAX_STEP = 100
-    step_count = 0
+    # Hiển thị bản đồ ban đầu
+    main_ui.showWumpusWorld(env.grid)
 
-    while not agent.finished() and step_count < MAX_STEP:
+    # Lưu trạng thái bản đồ theo từng bước (để truyền vào UI)
+    MAPS = []
+    MAPS.append(copy.deepcopy(env.grid))
+
+    # Kết quả hành động [(pos), action, point, HP, potions]
+    RESULT = []
+    MAX_STEPS = 100
+    step_count = 0
+    hp = 100
+    potion = 0
+
+    while not agent.finished() and step_count < MAX_STEPS:
         action = agent.step()
-        RESULT.append(((agent.x, agent.y), action))
         step_count += 1
 
-        if agent.has_gold:
-            # Tìm đường quay về bằng A*
-            return_path = a_star(start=(agent.x, agent.y),
-                                 goal=(0, 0),
-                                 heuristic=heuristic,
-                                 is_safe=inference.is_safe,
-                                 size=size)
+        RESULT.append(((agent.x, agent.y), action, agent.point, hp, potion))
+        MAPS.append(copy.deepcopy(env.grid))
+
+        if action == "GRAB":
+            return_path = a_star(
+                start=(agent.x, agent.y),
+                goal=(0, 0),
+                heuristic=heuristic,
+                is_safe=inference.is_safe,
+                size=size
+            )
             for pos in return_path[1:]:
                 agent.x, agent.y = pos
-                RESULT.append(((agent.x, agent.y), "RETURN"))
+                agent.path.append(pos)
+                agent.take_action("Move Forward")
+                RESULT.append((pos, "Move Forward", agent.point, hp, potion))
+                MAPS.append(copy.deepcopy(env.grid))
+
+            agent.take_action("Climb")
+            RESULT.append(((0, 0), "Climb", agent.point, hp, potion))
+            MAPS.append(copy.deepcopy(env.grid))
             break
 
-    # Hiển thị bản đồ và hành trình
-    program.MAPS.append(copy.deepcopy(program.cells))  # map để truyền cho UI
-
-    maps = copy.deepcopy(program.MAPS)
-    main_ui.showWumpusWorld(choose_map_result, map_data)
-    main_ui.showAgentMove(choose_map_result, RESULT, maps, choose_map_result)
-    write_output(file_path=output_filepath, agent=agent, RES=RESULT)
+    # Gọi giao diện để hiển thị hành trình agent
+    main_ui.showAgentMove(None, RESULT, MAPS, None)
 
 if __name__ == "__main__":
     while True:
