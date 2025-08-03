@@ -133,9 +133,6 @@ class Inference:
             for nx, ny in neighbors: # bỏ nghi ngờ mấy ô xung quanh là wumbus
                 self._ensure_kb((nx, ny))
                 self.kb[(nx, ny)]['possible_wumpus'] = False
-                # Nếu không có cả stench lẫn breeze thì safe
-                if not self.kb[(nx, ny)]['possible_pit']:
-                    self.kb[(nx, ny)]['safe'] = True
 
         # nếu có breeze hoặc stench, không khẳng định chắc chắn được nên đánh dấu là có thể nguy hiểm
         if percept['breeze']:
@@ -156,6 +153,11 @@ class Inference:
                     if all(self.percepts.get((ox, oy), {}).get('stench', True)
                         for (ox, oy) in get_neighbors((nx, ny), self.size)):
                         self.kb[(nx, ny)]['possible_wumpus'] = True
+
+        # Đánh dấu safe rõ ràng: không pit, không wumpus ⇒ safe
+        for (pos, facts) in self.kb.items():
+            if not facts['possible_pit'] and not facts['possible_wumpus']:
+                self.kb[pos]['safe'] = True
 
     def _ensure_kb(self, pos): # đảm bảo ô (x, y) đã có trong knowledge base
         if pos not in self.kb:
