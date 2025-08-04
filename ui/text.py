@@ -73,4 +73,4 @@ class Info(Text_Display):
         elif noti == 3:
             self.write_text_content(f"End game. Press Enter to return to menu.", BOARD_APPEEAR_WIDTH, SHOW_NOTI_HEIGHT, text_color=DARK_RED_COLOR)
         elif noti == 4:
-            self.write_text_content(f"Agent dies. Press Enter to return to menu.", BOARD_APPEEAR_WIDTH, SHOW_NOTI_HEIGHT, text_color=DARK_RED_COLOR)
+            self.write_text_content(f"Agent Wins. Press Enter to return to menu.", BOARD_APPEEAR_WIDTH, SHOW_NOTI_HEIGHT, text_color=DARK_RED_COLOR)

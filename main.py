@@ -1,96 +1,101 @@
-# from algorithms.program import Program
-# from algorithms.agent import Agent
-# from algorithms.a_star import create_graph, a_star
-# import copy
-# from ui import main_ui
-# from utils.write_output import write_output
+from wumpus.environment import Environment
+from wumpus.inference import Inference
+from wumpus.agent import Agent
+from ui import main_ui
+import copy
 
 
-# def main():
-#     """
-#     Main function for running the Wumpus World game simulation.
+def write_output(file_path, agent, RES):
+    with open(file_path, "w", encoding="utf-8") as f:
+        f.write("== WUMPUS WORLD AGENT RESULT ==\n\n")
+        f.write(f"Final score: {agent.point}\n")
+        f.write(f"Gold collected: {'Yes' if agent.has_gold else 'No'}\n")
+        f.write(f"Total steps: {len(RES)}\n\n")
+        f.write("Action log:\n")
 
-#     This function initializes the game environment based on the chosen map,
-#     sets up the agent, and controls the game loop where the agent explores the map,
-#     interacts with elements (like Wumpus, pits, gold, and healing potions), and
-#     records its path and actions. The results are then displayed and output to a file.
+        for step, (pos, action, point, hp, potion) in enumerate(RES, 1):
+            f.write(f"Step {step:>2}: Pos {pos} - Action: {action:<15} | Point: {point}\n")
 
-#     The function involves:
-#     - Setting up the game environment from a pre-defined map.
-#     - Initializing the agent and simulating its decisions and actions.
-#     - Managing the agent's interaction with the environment and updating its state.
-#     - Outputting the results of the simulation.
 
-#     The agent's behavior includes pathfinding using the A* algorithm, shooting the Wumpus,
-#     collecting gold, healing potions, and managing its health and score.
-#     """
-#     # Display the menu to select a map and get the chosen map number
-#     choose_map_result = main_ui.showMenu() + 1
-#     file_path = f"input/map{choose_map_result}.txt"
-#     output_filepath = f"output/result{choose_map_result}.txt"
-#     # Initialize the Program with the selected map file
-#     program = Program(file_path)
-#     # Return the initial map and make a deep copy of it
-#     ma = program.return_map_test()
-#     map = copy.deepcopy(ma)
-#     # Store the initial state of the map
-#     program.MAPS.append(copy.deepcopy(program.cells))
-#     # Initialize the agent with the map size
-#     agent = Agent(map_size=program.map_size)
-#     # Perform a depth-first search to explore the map
-#     agent.dfs(program)  # 1
+def main():
+    # Get configuration from user
+    config = main_ui.showMenu()
+    if config is None:
+        return
 
-#     # Process possible Wumpus locations
-#     for cell in agent.maybe_wumpus:
-#         if cell not in agent.path and cell not in agent.sure_wumpus:
-#             agent.sure_wumpus.append(cell)
+    size, pit_prob, wumpus_count = config
 
-#     # Process possible pit locations
-#     for cell in agent.maybe_pit:
-#         if cell not in agent.path and cell not in agent.sure_pit:
-#             agent.sure_pit.append(cell)
+    # Create environment and agent
+    env = Environment(size=size, k=wumpus_count, pit_prob=pit_prob)
+    inference = Inference(size)
+    agent = Agent(env, inference)
 
-#     # Create a graph of the path explored by the agent for Wumpus elimination
-#     graph1 = create_graph(
-#         agent.path, agent.map_size
-#     )  # graph -> o agent di qua -> bieu do -> de tim path toi uu trong A* -> luu w chet
+    print(
+        f"[MAIN] Created {size}x{size} world with {wumpus_count} Wumpus and {pit_prob} pit probability"
+    )
 
-#     # Create a graph of the path for general movement and interaction
-#     graph2 = create_graph(
-#         agent.path, agent.map_size
-#     )  # graph -> ban wumpus -> update path -> ban dau
-#     agent.shoot_process(program, graph1)  # luu w -> chet
-#     agent.path.append((0, 0))  # quay ve o (0,0)
-#     agent.current_hp = 100
-#     tmp_poition = 0
-#     tmp_hp = 100
-#     primary_path = []  # path -> tra ve UI
-#     main_ui.showWumpusWorld(choose_map_result, map)
-#     for i in range(len(agent.path) - 1):
-#         path_with_info = []
-#         current = agent.path[i]
-#         nextt = agent.path[i + 1]
-#         tmp_path = a_star(
-#             graph2, current, nextt, agent, program
-#         )  # goi a star -> the hien duong
-#         if tmp_path == []:
-#             graph2 = graph1
-#             tmp_path = a_star(graph2, current, nextt, agent, program)
-#         for j in range(len(tmp_path) - 1):
-#             action = []
-#             tmp_hp = agent.current_hp
-#             if tmp_path[j] in agent.grab_gold:
-#                 action.append("Grab Gold")
-#                 agent.grab_gold.remove(tmp_path[j])
-#             if tmp_path[j] in agent.grab_heal:
-#                 action.append("Grab Heal")
-#                 agent.grab_heal.remove(tmp_path[j])
-#                 tmp_poition += 1
-#             vect = (
-#                 tmp_path[j + 1][0] - tmp_path[j][0],
-#                 tmp_path[j + 1][1] - tmp_path[j][1],
-#             )
-#             if (vect[0] * agent.direction[0]) + (vect[1] * agent.direction[1]) == 0:
+    # Show initial map
+    main_ui.showWumpusWorld(env.grid)
+
+    # Store map states for UI
+    MAPS = []
+    MAPS.append(copy.deepcopy(env.grid))
+
+    # Agent action results
+    RESULT = []
+    MAX_STEPS = size * size * 2  # More reasonable step limit
+    step_count = 0
+
+    # Main game loop
+    while not agent.finished() and step_count < MAX_STEPS:
+        print(f"\n=== STEP {step_count + 1} ===")
+        print(f"Agent at ({agent.x}, {agent.y})")
+        
+        # Check current cell for dangers (debug info)
+        current_cell = env.grid[agent.y][agent.x]
+        if current_cell.wumpus:
+            print(f"[MAIN] WARNING: Agent is on Wumpus cell!")
+        if current_cell.pit:
+            print(f"[MAIN] WARNING: Agent is on Pit cell!")
+
+        action = agent.step()
+        step_count += 1
+
+        # Record result
+        hp = 0 if (action == "DIE" or agent.dead) else 100
+        RESULT.append(((agent.x, agent.y), action, agent.point, hp, 0))
+        MAPS.append(copy.deepcopy(env.grid))
+
+        print(f"[MAIN] Step {step_count}: {action}, Score: {agent.point}")
+
+        # Check terminal conditions
+        if action == "DIE" or agent.dead:
+            print("[MAIN] Agent died!")
+            break
+        elif action == "CLIMB":
+            print("[MAIN] Agent successfully escaped!")
+            break
+        elif action == "STAY":
+            print("[MAIN] Agent has no safe moves")
+            break
+
+    # Show agent movement
+    main_ui.showAgentMove(None, RESULT, MAPS, None)
+
+    # Write output
+    write_output(file_path="output/result.txt", agent=agent, RES=RESULT)
+
+    print(f"\n=== FINAL RESULTS ===")
+    print(f"Steps taken: {step_count}")
+    print(f"Final score: {agent.point}")
+    print(f"Gold collected: {agent.has_gold}")
+    print(f"Agent escaped: {agent.finished()}")
+    print(f"Agent died: {agent.dead}")
+
+
+if __name__ == "__main__":
+    while True:
+        main()
 #                 if agent.direction == (1, 0):
 #                     if vect == (0, 1):
 #                         action.append("Turn Right")
@@ -471,6 +476,9 @@ def main():
         
 
 
+if __name__ == "__main__":
+    while True:
+        main()
 if __name__ == "__main__":
     while True:
         main()

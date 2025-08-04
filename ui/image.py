@@ -78,17 +78,11 @@ class ImageElement:
         self.breeze_img = pygame.image.load('ui/assets/breeze.png')
         self.breeze_img = pygame.transform.scale(self.breeze_img, self.cell_size)
 
-        # #https://en.ac-illust.com/clip-art/22263264/poisonous-gas
-        # self.poisonous_gas_img = pygame.image.load('ui/assets/poisonous_gas.png')
-        # self.poisonous_gas_img = pygame.transform.scale(self.poisonous_gas_img, self.cell_size)
-        # self.whiff_img = pygame.image.load('ui/assets/whiff.png')
-        # self.whiff_img = pygame.transform.scale(self.whiff_img, self.cell_size)
-
-        # #https://pngtree.com/freepng/potion-mysterious-magic-potion-bottle_6838219.html
-        # self.healing_potion_img = pygame.image.load('ui/assets/healing_potion.png')
-        # self.healing_potion_img = pygame.transform.scale(self.healing_potion_img, self.cell_size)
-        # self.glow_img = pygame.image.load('ui/assets/glow.png')
-        # self.glow_img = pygame.transform.scale(self.glow_img, self.cell_size)
+        # Add placeholder images for missing elements
+        self.poisonous_gas_img = self.pit_img  # Use pit image as placeholder
+        self.whiff_img = self.breeze_img       # Use breeze image as placeholder
+        self.healing_potion_img = self.gold_img # Use gold image as placeholder
+        self.glow_img = self.stench_img        # Use stench image as placeholder
 
     
     # Show images
@@ -206,26 +200,57 @@ class Map(ImageElement):
     def showPath(self, y, x): # Show visitted cells
         #[element, stench, breeze, whiff, glow, scream]
         self.showEmpty(y, x, self.h)
-        if 'A' in self.map_data[y][x][0]:
+        
+        # Handle different data formats
+        if isinstance(self.map_data[y][x], list) and len(self.map_data[y][x]) > 0:
+            # Format: [element, stench, breeze, whiff, glow, scream]
+            element = self.map_data[y][x][0] if len(self.map_data[y][x]) > 0 else ''
+            stench = self.map_data[y][x][1] if len(self.map_data[y][x]) > 1 else False
+            breeze = self.map_data[y][x][2] if len(self.map_data[y][x]) > 2 else False
+            whiff = self.map_data[y][x][3] if len(self.map_data[y][x]) > 3 else False
+            glow = self.map_data[y][x][4] if len(self.map_data[y][x]) > 4 else False
+            scream = self.map_data[y][x][5] if len(self.map_data[y][x]) > 5 else False
+        else:
+            # Handle Cell objects from environment
+            cell = self.map_data[y][x]
+            element = ''
+            if hasattr(cell, 'wumpus') and cell.wumpus:
+                element += 'W'
+            if hasattr(cell, 'pit') and cell.pit:
+                element += 'P'
+            if hasattr(cell, 'gold') and cell.gold:
+                element += 'G'
+            if element == '':
+                element = '-'
+                
+            stench = getattr(cell, 'stench', False)
+            breeze = getattr(cell, 'breeze', False)
+            whiff = False  # Not used in basic Wumpus World
+            glow = getattr(cell, 'glitter', False)
+            scream = False  # Handled separately
+        
+        # Show elements
+        if 'A' in element:
             self.showAgent(y, x, self.h)
-        if 'G' in self.map_data[y][x][0]:
+        if 'G' in element:
             self.showGold(y, x, self.h)
-        if 'W' in self.map_data[y][x][0]:
+        if 'W' in element:
             self.showWumpus(y, x, self.h)
-        if 'P' in self.map_data[y][x][0]:
+        if 'P' in element and 'P_G' not in element:
             self.showPit(y, x, self.h)
-        if 'P_G' in self.map_data[y][x][0]:
+        if 'P_G' in element:
             self.showPoisonousGas(y, x, self.h)
-        if 'H_P' in self.map_data[y][x][0]:
+        if 'H_P' in element:
             self.showHealingPotion(y, x, self.h)
         
-        if self.map_data[y][x][1]:
+        # Show effects
+        if stench:
             self.showStench(y, x, self.h)
-        if self.map_data[y][x][2]:
+        if breeze:
             self.showBreeze(y, x, self.h)
-        if self.map_data[y][x][3]:
+        if whiff:
             self.showWhiff(y, x, self.h)
-        if self.map_data[y][x][4]:
+        if glow:
             self.showGlow(y, x, self.h)
-        if self.map_data[y][x][5]:
+        if scream:
             self.showScream(y, x, self.h)

@@ -154,8 +154,8 @@ class Environment:
         # place pits
         for i in range(self.size):
             for j in range(self.size):
-                if (i, j) != (0, 0) and random.random() < pit_prob and not self.grid[i][j].wumpus:
-                    self.grid[i][j].pit = True
+                if (i, j) != (0, 0) and random.random() < pit_prob and not self.grid[j][i].wumpus:
+                    self.grid[j][i].pit = True
                     for nx, ny in get_neighbors((i, j), self.size):
                         self.grid[ny][nx].breeze = True
 
@@ -213,10 +213,18 @@ class Environment:
             y += dy
             if (x, y) in self.wumpus_positions:
                 self.wumpus_positions.remove((x, y))
-                self.grid[x][y].wumpus = False
-                # remove stench
+                self.grid[y][x].wumpus = False
+                # remove stench from neighbors
                 for nx, ny in get_neighbors((x, y), self.size):
-                    self.grid[ny][nx].stench = False
+                    if self.in_bounds(nx, ny):
+                        # Check if there are other wumpus nearby
+                        has_other_wumpus = False
+                        for wnx, wny in get_neighbors((nx, ny), self.size):
+                            if (wnx, wny) in self.wumpus_positions:
+                                has_other_wumpus = True
+                                break
+                        if not has_other_wumpus:
+                            self.grid[ny][nx].stench = False
                 scream = True
                 break
         self.scream = scream
