@@ -403,6 +403,18 @@ import copy
 def heuristic(pos, goal=(0, 0)):
     return abs(pos[0] - goal[0]) + abs(pos[1] - goal[1])
 
+def write_output(file_path, agent, RES):
+    with open(file_path, "w", encoding="utf-8") as f:
+        f.write("== WUMPUS WORLD AGENT RESULT ==\n\n")
+        f.write(f"Final score: {agent.point}\n")
+        f.write(f"Gold collected: {'Yes' if agent.has_gold else 'No'}\n")
+        f.write(f"Total steps: {len(RES)}\n\n")
+        f.write("Action log:\n")
+
+        for step, (pos, action, point) in enumerate(RES, 1):
+            f.write(f"Step {step:>2}: Pos {pos} - Action: {action:<15} | Point: {point}\n")
+
+
 def main():
     # Lấy thông tin cấu hình từ người dùng
     size, pit_prob, wumpus_count = main_ui.showMenu()
@@ -455,7 +467,10 @@ def main():
 
     # Gọi giao diện để hiển thị hành trình agent
     main_ui.showAgentMove(None, RESULT, MAPS, None)
-    
+    write_output(file_path="output/result.txt", agent=agent, RES=RESULT)
+
+        
+
 
 if __name__ == "__main__":
     while True:
