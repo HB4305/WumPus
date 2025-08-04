@@ -395,8 +395,8 @@
 from wumpus.environment import Environment
 from wumpus.inference import Inference
 from wumpus.agent import Agent
-from wumpus.algorithm import a_star
-from wumpus.utils import get_neighbors
+from wumpus.planner import astar_search
+from wumpus.algorithm import heuristic
 from ui import main_ui
 import copy
 
@@ -446,10 +446,9 @@ def main():
         MAPS.append(copy.deepcopy(env.grid))
 
         if action == "GRAB":
-            return_path = a_star(
+            return_path = astar_search(
                 start=(agent.x, agent.y),
                 goal=(0, 0),
-                heuristic=heuristic,
                 is_safe=inference.is_safe,
                 size=size
             )
