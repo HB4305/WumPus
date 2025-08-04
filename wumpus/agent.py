@@ -12,6 +12,7 @@ class Agent:
         self.path = []
         self.position = (0, 0)
         self.point = 0
+        self.arrow_used = False
 
     def step(self):
         percepts = self.env.get_percepts(self.x, self.y)
@@ -42,7 +43,7 @@ class Agent:
             self.path.append(next_pos)
             self.take_action('Move Forward')  # ✅ Thực hiện hành động thật sự
             return f"MOVE to {next_pos}"
-
+        
         # Không còn ô an toàn → xem có nên bắn
         wumpus_locs = self.inference.get_possible_wumpus()
         certain_wumpus = [loc for loc in wumpus_locs if self.inference.is_wumpus_certain(loc)]
@@ -54,10 +55,16 @@ class Agent:
                 print("Shot arrow at", (wx, wy))
                 return f"SHOOT at {(wx, wy)}"
 
+        if self.has_gold and (self.x, self.y) == (0, 0):
+            self.take_action("Climb")
+            print("Agent climbed out with the gold!")
+            return "CLIMB"
+        
         return "STAY"
+    
 
     def can_shoot(self, wx, wy):
-        return self.x == wx or self.y == wy
+        return (self.x == wx or self.y == wy) and self.arrow_used
 
     def take_action(self, action):
         if action == 'Move Forward':
@@ -66,8 +73,10 @@ class Agent:
             self.has_gold = True
             self.point += 1000
         elif action == 'Shoot':
-            self.shoot_arrow()
-            self.point -= 10
+            if not self.arrow_used:
+                self.shoot_arrow()
+                self.arrow_used = True
+                self.point -= 10
         elif action == 'Climb':
             if self.has_gold:
                 self.point += 0  # Bạn có thể cộng thêm điểm nếu muốn
