@@ -78,6 +78,13 @@ class Inference:
 
     def get_kb(self):
         return self.kb
+    
+    def get_possible_wumpus(self):
+        return [pos for pos, facts in self.kb.items() if facts['possible_wumpus']]
+
+    def is_wumpus_certain(self, pos):
+        possible = self.get_possible_wumpus()
+        return len(possible) == 1 and possible[0] == pos
 # from .planner import astar_search
 # from .utils import get_neighbors
 
@@ -142,3 +149,5 @@ class Inference:
 #         self.path.append(next_pos)
 #         self.env.move_agent(self.x, self.y)
 #         self.action_log.append(f"MOVE to {next_pos}")
+
+

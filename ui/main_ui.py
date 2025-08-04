@@ -465,7 +465,7 @@ def showWumpusWorld(map_data):
     pygame.display.update()
     pygame.time.wait(2000)
 
-def showAgentMove(_, path, m, __):
+def showAgentMove(_, path, maps_data, __):
     I2 = Info(screen, level=1)
     I2.showNoti(1)
     isMoving = True
@@ -476,15 +476,27 @@ def showAgentMove(_, path, m, __):
     time_wait_3 = 300
     time_wait_4 = 1200
 
-    maps = [
-        [[
-            [cell.element, cell.is_stench, cell.is_breeze, cell.is_whiff, cell.is_glow, cell.is_scream]
-            for cell in row
-        ] for row in layer] for layer in m
-    ]
+    # Use the maps_data directly since it's already a list of grids
+    maps = []
+    for env_grid in maps_data:
+        map_layer = []
+        for row in env_grid:
+            map_row = []
+            for cell in row:
+                # Convert cell object to the expected format
+                map_row.append([
+                    'W' if cell.wumpus else 'P' if cell.pit else 'G' if cell.gold else '-',
+                    cell.stench,
+                    cell.breeze,
+                    cell.pit,
+                    cell.glitter,
+                    False  # scream - you may need to adjust this based on your environment
+                ])
+            map_layer.append(map_row)
+        maps.append(map_layer)
 
-    count_map = 1
-    M2 = Map(screen, maps[0])
+    count_map = 0 if len(maps) > 0 else 1
+    M2 = Map(screen, maps[0] if maps else [])
 
     while True:
         if isMoving:
@@ -529,8 +541,9 @@ def showAgentMove(_, path, m, __):
                     M2.showGold(y, x, M2.h)
                     pygame.display.flip()
                     pygame.time.wait(time_wait_4)
-                    M2.updateMap(maps[count_map])
-                    count_map += 1
+                    if count_map + 1 < len(maps):
+                        M2.updateMap(maps[count_map + 1])
+                        count_map += 1
 
                 elif action == 'Shoot':
                     y_shoot, x_shoot = M2.agentShoot(path, i, direction)
@@ -541,8 +554,9 @@ def showAgentMove(_, path, m, __):
                     else:
                         pygame.display.flip()
                         pygame.time.wait(time_wait_3)
-                    M2.updateMap(maps[count_map])
-                    count_map += 1
+                    if count_map + 1 < len(maps):
+                        M2.updateMap(maps[count_map + 1])
+                        count_map += 1
 
                 if i > 0 and action != 'Shoot' and path[i - 1][1] == 'Shoot':
                     M2.showUnknown(y_shoot, x_shoot, M2.h)

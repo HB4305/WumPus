@@ -455,6 +455,7 @@ def main():
 
     # Gọi giao diện để hiển thị hành trình agent
     main_ui.showAgentMove(None, RESULT, MAPS, None)
+    
 
 if __name__ == "__main__":
     while True:
