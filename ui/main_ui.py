@@ -362,9 +362,8 @@ def inputForm():
     font = pygame.font.SysFont(FONT_TYPE, FONT_LARGE, bold=True)
     clock = pygame.time.Clock()
 
-
     input_boxes = [
-        {"label": "Enter map size (4-20):", "value": "", "type": "int"},
+        {"label": "Enter map size (4 - 20):", "value": "", "type": "int"},
         {"label": "Enter pit probability (0.0 - 1.0):", "value": "", "type": "float"},
         {"label": "Enter number of Wumpus (1-10):", "value": "", "type": "int"},
     ]
@@ -374,15 +373,16 @@ def inputForm():
         showMenuBackground(screen)
 
         for i, box in enumerate(input_boxes):
-            label_color = DARK_BLUE_COLOR if i == active_box else LIGHT_BLUE_COLOR
+            label_color = DARK_RED_COLOR if i == active_box else WHITE_COLOR
             label_surface = font.render(box["label"], True, label_color)
-            value_surface = font.render(box["value"], True, LIGHT_BLUE_COLOR)
+            value_surface = font.render(box["value"], True, WHITE_COLOR)
 
             y = 150 + i * 100
             screen.blit(label_surface, (100, y))
-            screen.blit(value_surface, (100 + label_surface.get_width() + 20, y))  # value bên phải label
+            screen.blit(value_surface, (100 + label_surface.get_width() + 20, y))
 
-        instructions = font.render("Enter: Next  |  Backspace: Delete  |  Esc: Exit", True, LIGHT_BLUE_COLOR)
+        small_font = pygame.font.SysFont(FONT_TYPE, FONT_MEDIUM)
+        instructions = small_font.render("Up/Down: Navigate  |  Enter: Confirm  |  Esc: Back to Menu", True, WHITE_COLOR)
         screen.blit(instructions, (100, 500))
 
         pygame.display.flip()
@@ -395,16 +395,21 @@ def inputForm():
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    pygame.quit()
-                    sys.exit()
+                    return None  # Return None to indicate going back to menu
+
+                elif event.key == pygame.K_UP:
+                    active_box = (active_box - 1) % len(input_boxes)
+
+                elif event.key == pygame.K_DOWN:
+                    active_box = (active_box + 1) % len(input_boxes)
 
                 elif event.key == pygame.K_BACKSPACE:
                     input_boxes[active_box]["value"] = input_boxes[active_box]["value"][:-1]
 
                 elif event.key == pygame.K_RETURN:
-                    if active_box < len(input_boxes) - 1:
-                        active_box += 1
-                    else:
+                    # Check if all fields are filled and valid
+                    all_filled = all(box["value"].strip() for box in input_boxes)
+                    if all_filled:
                         try:
                             size = int(input_boxes[0]["value"])
                             prob = float(input_boxes[1]["value"])
@@ -412,13 +417,11 @@ def inputForm():
                             if 4 <= size <= 20 and 0.0 <= prob <= 1.0 and 1 <= wumpus <= 10:
                                 return size, prob, wumpus
                         except:
-                            pass  # Ignore invalid input
+                            pass
 
                 else:
                     if event.unicode.isprintable():
                         input_boxes[active_box]["value"] += event.unicode
-
-
 
 def showMenu():
     showMenuBackground(screen)
@@ -448,19 +451,55 @@ def showMenu():
         choose_option = menu.get_option_result()
 
         if choose_option == 0:  # Play
-            return inputForm()  # Nhập thông tin bản đồ
+            result = inputForm()
+            if result is not None:  # Only return if we got valid input
+                return result
+            # If result is None, continue the menu loop
         elif choose_option == 1:  # Quit
             pygame.quit()
             sys.exit()
 
         pygame.display.update()
 
+def calculateScore(action, current_score=0, has_gold=False, died=False):
+    """
+    Calculate score based on Wumpus World scoring system:
+    - Grab gold: +10
+    - Move forward: -1
+    - Turn left/right: -1
+    - Shoot: -10
+    - Die (fall in pit or eaten by wumpus): -1000
+    - Climb out (with gold): +1000
+    - Climb out (without gold): 0
+    """
+    if died:
+        return -1000
+    
+    if action == 'Move Forward':
+        return current_score - 1
+    elif action in ['Turn Left', 'Turn Right']:
+        return current_score - 1
+    elif action == 'Grab Gold':
+        return current_score + 10
+    elif action == 'Shoot':
+        return current_score - 10
+    elif action == 'Climb':
+        if has_gold:
+            return current_score + 1000
+        else:
+            return current_score + 0
+    else:
+        return current_score
+
 def showWumpusWorld(map_data):
     M1 = Map(screen, map_data)
     showGameBackground(screen, level=1)
     M1.showUnknownBoard()
     I1 = Info(screen, level=1)
-    I1.showLeftBar(1, point=10000, HP=100, H_Ps=0)
+    # Calculate map size from map_data
+    map_size = len(map_data) if map_data else 4
+    # Start with score = 0
+    I1.showLeftBar(map_size, score=0)
     I1.showNoti(0)
     pygame.display.update()
     pygame.time.wait(2000)
@@ -470,33 +509,37 @@ def showAgentMove(_, path, maps_data, __):
     I2.showNoti(1)
     isMoving = True
     direction = 1
+    current_score = 0  # Start with 0 score
+    has_gold = False
 
     time_wait_1 = 50
     time_wait_2 = 100
     time_wait_3 = 300
     time_wait_4 = 1200
 
-    # Use the maps_data directly since it's already a list of grids
+    # Convert maps_data to expected format
     maps = []
     for env_grid in maps_data:
         map_layer = []
         for row in env_grid:
             map_row = []
             for cell in row:
-                # Convert cell object to the expected format
                 map_row.append([
                     'W' if cell.wumpus else 'P' if cell.pit else 'G' if cell.gold else '-',
                     cell.stench,
                     cell.breeze,
                     cell.pit,
                     cell.glitter,
-                    False  # scream - you may need to adjust this based on your environment
+                    False  # scream
                 ])
             map_layer.append(map_row)
         maps.append(map_layer)
 
     count_map = 0 if len(maps) > 0 else 1
     M2 = Map(screen, maps[0] if maps else [])
+    
+    # Calculate map size
+    map_size = len(maps[0]) if maps and len(maps[0]) > 0 else 4
 
     while True:
         if isMoving:
@@ -514,9 +557,18 @@ def showAgentMove(_, path, maps_data, __):
 
                 y, x = path[i][0]
                 action = path[i][1]
-                point = path[i][2] if len(path[i]) > 2 else 0
-                hp = path[i][3] if len(path[i]) > 3 else 0
-                potion = path[i][4] if len(path[i]) > 4 else 0
+                
+                # Calculate score based on action
+                if action == 'Grab Gold':
+                    has_gold = True
+                
+                # Check if agent died (you may need to adjust this based on your path data structure)
+                died = False
+                if len(path[i]) > 3:
+                    # Assuming path[i][3] indicates HP or death status
+                    died = path[i][3] == 0
+                
+                current_score = calculateScore(action, current_score, has_gold, died)
 
                 M2.showPath(y, x)
                 M2.showAgent(y, x, M2.h)
@@ -561,33 +613,34 @@ def showAgentMove(_, path, maps_data, __):
                 if i > 0 and action != 'Shoot' and path[i - 1][1] == 'Shoot':
                     M2.showUnknown(y_shoot, x_shoot, M2.h)
 
-                I2.showLeftBar(1, point, hp, potion)
+                # Show only score
+                I2.showLeftBar(map_size, score=current_score)
                 pygame.display.flip()
                 pygame.time.wait(time_wait_1)
 
+            # Final score calculation
             final_action = path[-1][1]
-            final_hp = path[-1][3] if len(path[-1]) > 3 else 0
-            final_point = path[-1][2] if len(path[-1]) > 2 else 0
-            final_potion = path[-1][4] if len(path[-1]) > 4 else 0
+            final_died = len(path[-1]) > 3 and path[-1][3] == 0
+            final_score = calculateScore(final_action, current_score, has_gold, final_died)
 
-            if final_hp == 0:
-                I2.showNoti(3)
+            if final_died:
+                I2.showNoti(3)  # Death notification
             elif final_action == 'Climb':
-                I2.showNoti(2)
+                I2.showNoti(2)  # Success notification
                 M2.showPath(path[-1][0][0], path[-1][0][1])
             else:
-                I2.showNoti(4)
+                I2.showNoti(4)  # Other ending
                 M2.showPath(path[-1][0][0], path[-1][0][1])
                 M2.showDie(path[-1][0][0], path[-1][0][1], M2.h)
 
-            I2.showLeftBar(1, final_point, final_hp, final_potion)
+            I2.showLeftBar(map_size, score=final_score)
             pygame.display.flip()
             isMoving = False
 
         elif len(path) == 0:
             isMoving = False
             I2.showNoti(4)
-            I2.showLeftBar(1)
+            I2.showLeftBar(4, score=0)  # Default to 4x4 if no path
             pygame.display.flip()
 
         else:
