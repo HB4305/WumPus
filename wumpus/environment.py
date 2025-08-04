@@ -239,3 +239,5 @@ class Environment:
         return {"escaped": False}
 
 
+    def is_terminal(self):
+        return self.agent_escaped or (self.grid[self.agent_pos[1]][self.agent_pos[0]].wumpus or self.grid[self.agent_pos[1]][self.agent_pos[0]].pit)
