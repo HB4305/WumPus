@@ -16,6 +16,18 @@ def write_output(file_path, agent, RES):
         for step, (pos, action, point, hp, potion) in enumerate(RES, 1):
             f.write(f"Step {step:>2}: Pos {pos} - Action: {action:<15} | Point: {point}\n")
 
+import os
+
+def write_map_to_file(file_path, grid):
+    try:
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write("== WUMPUS WORLD MAP ==\n\n")
+            for row in grid:
+                f.write(" ".join(str(cell) for cell in row) + "\n")
+        print(f"Map successfully written to {file_path}")
+    except Exception as e:
+        print(f"Error writing map to file: {e}")
 
 def main():
     # Get configuration from user
@@ -29,6 +41,14 @@ def main():
     env = Environment(size=size, k=wumpus_count, pit_prob=pit_prob)
     inference = Inference(size)
     agent = Agent(env, inference)
+
+    # Xuất bản đồ vào file trong folder input
+    # Debug: In nội dung env.grid
+    print("Generated grid:", env.grid)
+    print("Grid type:", type(env.grid))
+
+    write_map_to_file("/Users/macbook/Documents/Năm 2/Kỳ 3/CSAI/Project 2/PumPus/input/wumpus_world_map.txt", env.grid)
+
 
     print(
         f"[MAIN] Created {size}x{size} world with {wumpus_count} Wumpus and {pit_prob} pit probability"
@@ -420,6 +440,7 @@ def write_output(file_path, agent, RES):
             f.write(f"Step {step:>2}: Pos {pos} - Action: {action:<15} | Point: {point}\n")
 
 
+
 def main():
     # Lấy thông tin cấu hình từ người dùng
     size, pit_prob, wumpus_count = main_ui.showMenu()
@@ -429,6 +450,7 @@ def main():
     inference = Inference(size)
     agent = Agent(env, inference)
 
+    
     # Hiển thị bản đồ ban đầu
     main_ui.showWumpusWorld(env.grid)
 

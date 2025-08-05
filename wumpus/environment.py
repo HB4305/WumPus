@@ -121,6 +121,24 @@ class Cell:
         self.stench = False
         self.breeze = False
         self.glitter = False
+    
+    def __str__(self):
+        symbols = []
+        if self.wumpus:
+            symbols.append("W")
+        if self.pit:
+            symbols.append("P")
+        if self.gold:
+            symbols.append("G")
+        if self.stench:
+            symbols.append("S")
+        if self.breeze:
+            symbols.append("B")
+        if self.visited:
+            symbols.append("V")
+        if not symbols:
+            return "_"
+        return "".join(symbols)
 
 class Environment:
     def __init__(self, size=8, k=2, pit_prob=0.2):
