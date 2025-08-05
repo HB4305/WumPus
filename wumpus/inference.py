@@ -4,48 +4,162 @@ from .utils import get_neighbors
 class Inference:
     def __init__(self, size):
         self.size = size
-        self.kb = {}  # {(x, y): {'visited': bool, 'safe': bool, 'possible_pit': bool, 'possible_wumpus': bool}}
-        self.percepts = {}  # {(x, y): {'stench': bool, 'breeze': bool, 'glitter': bool}}
+        self.kb = defaultdict(lambda: {
+            'visited': False,
+            'safe': False,
+            'possible_pit': False,
+            'possible_wumpus': False
+        })
+        self.percepts = {}
+        self.confirmed_pits = set()
+        self.confirmed_no_pits = set()  # Theo dõi ô chắc chắn không có pit
 
     def update_knowledge(self, position, percept):
         x, y = position
-        self.kb.setdefault((x, y), {
-            'visited': True, 'safe': True,
-            'possible_pit': False, 'possible_wumpus': False
+        cell = self.kb[(x, y)]
+        
+        # Cập nhật trạng thái ô hiện tại
+        cell.update({
+            'visited': True,
+            'safe': True,
+            'possible_pit': False,
+            'possible_wumpus': False
         })
         
-        # Current position is safe (agent is there)
-        self.kb[(x, y)]['visited'] = True
-        self.kb[(x, y)]['safe'] = True
-        self.kb[(x, y)]['possible_pit'] = False
-        self.kb[(x, y)]['possible_wumpus'] = False
-        
-        # Store percept
+        # Lưu percept
         self.percepts[(x, y)] = percept
         neighbors = get_neighbors((x, y), self.size)
 
-        # Process breeze
-        if not percept['breeze']:
-            # No breeze means no pits in adjacent cells
-            for nx, ny in neighbors:
-                self._ensure_kb((nx, ny))
-                self.kb[(nx, ny)]['possible_pit'] = False
-        else:
-            # There is breeze, so at least one adjacent cell has a pit
-            self._mark_possible_danger(neighbors, 'possible_pit')
+        # Xử lý pit (breeze)
+        self._process_pit_info((x, y), percept['breeze'], neighbors)
+        
+        # Xử lý Wumpus (stench)
+        self._process_wumpus_info((x, y), percept['stench'], neighbors)
 
-        # Process stench
-        if not percept['stench']:
-            # No stench means no wumpus in adjacent cells
+        # Cập nhật trạng thái an toàn
+        self._update_safety()
+
+    def _process_wumpus_info(self, position, has_stench, neighbors):
+        """Xử lý thông tin Wumpus từ stench"""
+        x, y = position
+        
+        if not has_stench:
+            # Không có stench => các ô lân cận không có Wumpus
             for nx, ny in neighbors:
-                self._ensure_kb((nx, ny))
                 self.kb[(nx, ny)]['possible_wumpus'] = False
         else:
-            # There is stench, so at least one adjacent cell has wumpus
-            self._mark_possible_danger(neighbors, 'possible_wumpus')
+            # Có stench => ít nhất một ô lân cận có Wumpus
+            unvisited = [pos for pos in neighbors if not self.kb[pos]['visited']]
+            
+            if len(unvisited) == 1:
+                # Nếu chỉ có 1 ô chưa visited, đó chính là Wumpus
+                wumpus_pos = unvisited[0]
+                self.kb[wumpus_pos].update({
+                    'possible_wumpus': True,
+                    'safe': False
+                })
 
-        # Update safety status
-        self._update_safety()
+    def _process_pit_info(self, position, has_breeze, neighbors):
+        x, y = position
+        
+        if not has_breeze:
+            # Không có breeze => các ô lân cận không có pit
+            for nx, ny in neighbors:
+                if not self.kb[(nx, ny)]['visited']:
+                    self.kb[(nx, ny)]['possible_pit'] = False
+                    self.confirmed_no_pits.add((nx, ny))
+        else:
+            # Có breeze => ít nhất một ô lân cận có pit
+            unvisited = [pos for pos in neighbors if not self.kb[pos]['visited']]
+            
+            # Nếu chỉ có 1 ô chưa visited, đó chính là pit
+            if len(unvisited) == 1:
+                pit_pos = unvisited[0]
+                self._confirm_pit(pit_pos)
+            else:
+                # Đánh dấu các ô chưa visited là possible pit
+                for pos in unvisited:
+                    if pos not in self.confirmed_no_pits:
+                        self.kb[pos].update({
+                            'possible_pit': True,
+                            'safe': False
+                        })
+                
+                # Cross-check với các percepts breeze khác để xác định pit
+                self._advanced_pit_inference()
+
+
+    def _advanced_pit_inference(self):
+        from collections import defaultdict
+        
+        # Tạo bản đồ các ô có thể là pit và số breeze chúng giải thích
+        pit_candidates = defaultdict(int)
+        breeze_positions = [pos for pos, percept in self.percepts.items() if percept['breeze']]
+        
+        for pos in self.get_possible_pits():
+            for breeze_pos in breeze_positions:
+                if pos in get_neighbors(breeze_pos, self.size):
+                    pit_candidates[pos] += 1
+        
+        # Tìm ô giải thích được nhiều breeze nhất
+        if pit_candidates:
+            best_pit = max(pit_candidates.items(), key=lambda x: x[1])[0]
+            if pit_candidates[best_pit] == len(breeze_positions):
+                self._confirm_pit(best_pit)
+
+    def _confirm_pit(self, pos):
+        """Xác nhận ô có pit"""
+        self.confirmed_pits.add(pos)
+        self.kb[pos].update({
+            'possible_pit': True,
+            'safe': False
+        })
+        # Các ô lân cận không còn là possible pit (vì mỗi breeze chỉ cần 1 pit)
+        for neighbor in get_neighbors(pos, self.size):
+            if neighbor != pos and neighbor not in self.confirmed_pits:
+                self.kb[neighbor]['possible_pit'] = False
+                self.confirmed_no_pits.add(neighbor)
+
+
+    def _pit_explains_all_breeze(self, pit_pos):
+        """Kiểm tra nếu pit ở vị trí này có thể giải thích tất cả breeze đã quan sát"""
+        for pos, percept in self.percepts.items():
+            if percept['breeze']:
+                neighbors = get_neighbors(pos, self.size)
+                if pit_pos not in neighbors:
+                    # Có breeze mà pit này không giải thích được
+                    return False
+        return True
+
+    def _cross_check_pits(self):
+        """Sử dụng tất cả percepts breeze để xác định pit chính xác hơn"""
+        possible_pits = self.get_possible_pits()
+        
+        # Tìm các ô có thể là pit dựa trên tất cả breeze đã quan sát
+        for pos in possible_pits:
+            is_possible = True
+            for (px, py), percept in self.percepts.items():
+                if percept['breeze']:
+                    # Pit phải giải thích được tất cả breeze
+                    if pos not in get_neighbors((px, py), self.size):
+                        is_possible = False
+                        break
+            
+            if is_possible:
+                # Nếu ô này giải thích được tất cả breeze, xác nhận là pit
+                self._confirm_pit(pos)
+                # Sau khi xác nhận 1 pit, các ô khác không cần xét nữa
+                break
+
+    def is_pit_certain(self, pos):
+        """Kiểm tra chắc chắn có pit tại vị trí"""
+        return pos in self.confirmed_pits
+
+    def get_possible_pits(self):
+        """Lấy danh sách các ô có thể có pit"""
+        return [pos for pos, facts in self.kb.items() 
+                if facts['possible_pit'] and not facts['visited']]
+    
 
     def _mark_possible_danger(self, neighbors, danger_type):
         """Mark neighbors as possibly dangerous if not already ruled out"""
@@ -68,16 +182,13 @@ class Inference:
             self.kb[pos]['safe'] = False
 
     def _update_safety(self):
-        """Update safety status for all positions"""
-        for pos, facts in self.kb.items():
-            if facts['visited']:
-                continue
-            
-            # A cell is safe only if it's definitely not dangerous
-            if not facts['possible_pit'] and not facts['possible_wumpus']:
-                self.kb[pos]['safe'] = True
+        """Cập nhật trạng thái an toàn cho tất cả ô"""
+        for pos in self.kb:
+            cell = self.kb[pos]
+            if cell['visited']:
+                cell['safe'] = True
             else:
-                self.kb[pos]['safe'] = False
+                cell['safe'] = not (cell['possible_pit'] or cell['possible_wumpus'])
 
     def _ensure_kb(self, pos): # đảm bảo ô (x, y) đã có trong knowledge base
         if pos not in self.kb:
