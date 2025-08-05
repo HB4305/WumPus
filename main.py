@@ -17,17 +17,6 @@ def write_output(file_path, agent, RES):
             f.write(f"Step {step:>2}: Pos {pos} - Action: {action:<15} | Point: {point}\n")
 
 import os
-
-# def write_map_to_file(file_path, grid):
-#     try:
-#         os.makedirs(os.path.dirname(file_path), exist_ok=True)
-#         with open(file_path, "w", encoding="utf-8") as f:
-#             f.write("== WUMPUS WORLD MAP ==\n\n")
-#             for row in grid:
-#                 f.write(" ".join(str(cell) for cell in row) + "\n")
-#         print(f"Map successfully written to {file_path}")
-#     except Exception as e:
-#         print(f"Error writing map to file: {e}")
 def write_map_to_file(file_path, grid):
     try:
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
