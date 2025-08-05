@@ -18,16 +18,33 @@ def write_output(file_path, agent, RES):
 
 import os
 
+# def write_map_to_file(file_path, grid):
+#     try:
+#         os.makedirs(os.path.dirname(file_path), exist_ok=True)
+#         with open(file_path, "w", encoding="utf-8") as f:
+#             f.write("== WUMPUS WORLD MAP ==\n\n")
+#             for row in grid:
+#                 f.write(" ".join(str(cell) for cell in row) + "\n")
+#         print(f"Map successfully written to {file_path}")
+#     except Exception as e:
+#         print(f"Error writing map to file: {e}")
 def write_map_to_file(file_path, grid):
     try:
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         with open(file_path, "w", encoding="utf-8") as f:
-            f.write("== WUMPUS WORLD MAP ==\n\n")
-            for row in grid:
-                f.write(" ".join(str(cell) for cell in row) + "\n")
-        print(f"Map successfully written to {file_path}")
+            f.write("== WUMPUS WORLD MAP WITH COORDINATES ==\n\n")
+            size = len(grid)
+            for y in range(size):
+                row_data = []
+                for x in range(size):
+                    cell = grid[y][x]
+                    content = str(cell)
+                    row_data.append(f"{content}({x},{y})")
+                f.write("  ".join(row_data) + "\n")
+        print(f"Map with coordinates written to {file_path}")
     except Exception as e:
         print(f"Error writing map to file: {e}")
+
 
 def main():
     # Get configuration from user
