@@ -60,12 +60,15 @@ class Environment:
                 self.grid[ny][nx].stench = True
 
         # place pits
-        for i in range(self.size):
-            for j in range(self.size):
-                if (i, j) != (0, 0) and random.random() < pit_prob and not self.grid[j][i].wumpus:
-                    self.grid[j][i].pit = True
-                    for nx, ny in get_neighbors((i, j), self.size):
-                        self.grid[ny][nx].breeze = True
+        num_pits = int(self.size * self.size * pit_prob)  # Số pit cố định
+        placed_pits = 0
+        while placed_pits < num_pits and positions:
+            x, y = positions.pop()
+            if not self.grid[y][x].wumpus:
+                self.grid[y][x].pit = True
+                for nx, ny in get_neighbors((x, y), self.size):
+                    self.grid[ny][nx].breeze = True
+                placed_pits += 1
 
         # place gold, can be at (0,0), chưa đọc tới
         gold_candidates = [
