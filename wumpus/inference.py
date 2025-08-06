@@ -13,6 +13,8 @@ class Inference:
         self.percepts = {}
         self.confirmed_pits = set()
         self.confirmed_no_pits = set()  # Theo dõi ô chắc chắn không có pit
+        self.confirmed_no_wumbus = set()  # Theo dõi ô chắc chắn không có Wumpus
+        self.confirmed_wumpus = set()  # Theo dõi ô chắc chắn có Wumpus
 
     def update_knowledge(self, position, percept):
         x, y = position
@@ -58,6 +60,17 @@ class Inference:
                     'possible_wumpus': True,
                     'safe': False
                 })
+            else:
+                for pos in unvisited:
+                    if pos not in self.confirmed_no_wumbus:
+                        self.kb[pos].update({
+                            'possible_wumpus': True,
+                            'safe': False
+                        })
+            
+                # Cross-check với các percepts stench khác để xác định Wumpus
+                self._advanced_wumpus_inference()
+
 
     def _process_pit_info(self, position, has_breeze, neighbors):
         x, y = position
@@ -273,5 +286,25 @@ class Inference:
             current_y += dy
         
         self._update_safety()
+
+    def _advanced_wumpus_inference(self):
+        # Tạo danh sách các ô có stench
+        stench_positions = [pos for pos, percept in self.percepts.items() if percept['stench']]
+
+        # Tạo bản đồ các ô có thể là Wumpus và số stench chúng giải thích
+        wumpus_candidates = defaultdict(int)
+
+        for pos in self.get_possible_wumpus():
+            for stench_pos in stench_positions:
+                if pos in get_neighbors(stench_pos, self.size):
+                    wumpus_candidates[pos] += 1
+
+        # Tìm ô giải thích được nhiều stench nhất
+        if wumpus_candidates:
+            best_wumpus = max(wumpus_candidates.items(), key=lambda x: x[1])[0]
+            if wumpus_candidates[best_wumpus] == len(stench_positions):
+                self._confirm_wumpus(best_wumpus)
+
+
 
 
