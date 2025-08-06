@@ -13,7 +13,7 @@ class Inference:
         self.percepts = {}
         self.confirmed_pits = set()
         self.confirmed_no_pits = set()  # Theo dõi ô chắc chắn không có pit
-        self.confirmed_no_wumbus = set()  # Theo dõi ô chắc chắn không có Wumpus
+        self.confirmed_no_wumpus = set()  # Theo dõi ô chắc chắn không có Wumpus
         self.confirmed_wumpus = set()  # Theo dõi ô chắc chắn có Wumpus
 
     def update_knowledge(self, position, percept):
@@ -41,37 +41,7 @@ class Inference:
         # Cập nhật trạng thái an toàn
         self._update_safety()
 
-    def _process_wumpus_info(self, position, has_stench, neighbors):
-        """Xử lý thông tin Wumpus từ stench"""
-        x, y = position
-        
-        if not has_stench:
-            # Không có stench => các ô lân cận không có Wumpus
-            for nx, ny in neighbors:
-                self.kb[(nx, ny)]['possible_wumpus'] = False
-        else:
-            # Có stench => ít nhất một ô lân cận có Wumpus
-            unvisited = [pos for pos in neighbors if not self.kb[pos]['visited']]
-            
-            if len(unvisited) == 1:
-                # Nếu chỉ có 1 ô chưa visited, đó chính là Wumpus
-                wumpus_pos = unvisited[0]
-                self.kb[wumpus_pos].update({
-                    'possible_wumpus': True,
-                    'safe': False
-                })
-            else:
-                for pos in unvisited:
-                    if pos not in self.confirmed_no_wumbus:
-                        self.kb[pos].update({
-                            'possible_wumpus': True,
-                            'safe': False
-                        })
-            
-                # Cross-check với các percepts stench khác để xác định Wumpus
-                self._advanced_wumpus_inference()
-
-
+    # Xử lý pit
     def _process_pit_info(self, position, has_breeze, neighbors):
         x, y = position
         
@@ -173,6 +143,107 @@ class Inference:
         return [pos for pos, facts in self.kb.items() 
                 if facts['possible_pit'] and not facts['visited']]
     
+    # Xử lý wumpus
+    def _process_wumpus_info(self, position, has_stench, neighbors):
+        x, y = position
+
+        if not has_stench:
+            # Không có stench => các ô lân cận không có wumpus
+            for nx, ny in neighbors:
+                if not self.kb[(nx, ny)]['visited']:
+                    self.kb[(nx, ny)]['possible_wumpus'] = False
+                    self.confirmed_no_wumpus.add((nx, ny))
+        else:
+            # Có stench => ít nhất một ô lân cận có wumpus
+            unvisited = [pos for pos in neighbors if not self.kb[pos]['visited']]
+            
+            # Nếu chỉ còn 1 ô chưa visited, đó chính là wumpus
+            if len(unvisited) == 1:
+                wumpus_pos = unvisited[0]
+                self._confirm_wumpus(wumpus_pos)
+            else:
+                # Đánh dấu các ô chưa visited là possible wumpus
+                for pos in unvisited:
+                    if pos not in self.confirmed_no_wumpus:
+                        self.kb[pos].update({
+                            'possible_wumpus': True,
+                            'safe': False
+                        })
+                # Cross-check với nhiều stench khác
+                self._advanced_wumpus_inference()
+
+    def _advanced_wumpus_inference(self):
+        wumpus_candidates = defaultdict(int)
+        stench_positions = [pos for pos, percept in self.percepts.items() if percept['stench']]
+
+        for pos in self.get_possible_wumpus():
+            for stench_pos in stench_positions:
+                if pos in get_neighbors(stench_pos, self.size):
+                    wumpus_candidates[pos] += 1
+
+        if wumpus_candidates:
+            best_wumpus = max(wumpus_candidates.items(), key=lambda x: x[1])[0]
+            if wumpus_candidates[best_wumpus] == len(stench_positions):
+                self._confirm_wumpus(best_wumpus)
+    
+    def _confirm_wumpus(self, pos):
+        """Xác nhận wumpus"""
+        self.confirmed_wumpus.add(pos)
+        self.kb[pos].update({
+            'possible_wumpus': True,
+            'safe': False
+        })
+        # Các ô khác không còn là possible_wumpus
+        for neighbor in get_neighbors(pos, self.size):
+            if neighbor != pos and neighbor not in self.confirmed_wumpus:
+                self.kb[neighbor]['possible_wumpus'] = False
+                self.confirmed_no_wumpus.add(neighbor)
+
+    def _wumpus_explains_all_stench(self, wumpus_pos):
+        """Kiểm tra nếu wumpus này giải thích được tất cả stench đã thấy"""
+        for pos, percept in self.percepts.items():
+            if percept['stench']:
+                neighbors = get_neighbors(pos, self.size)
+                if wumpus_pos not in neighbors:
+                    return False
+        return True
+
+    def _cross_check_wumpus(self):
+        """Xác định wumpus chính xác từ nhiều stench"""
+        possible_wumpus = self.get_possible_wumpus()
+        
+        for pos in possible_wumpus:
+            is_possible = True
+            for (px, py), percept in self.percepts.items():
+                if percept['stench']:
+                    if pos not in get_neighbors((px, py), self.size):
+                        is_possible = False
+                        break
+
+            if is_possible:
+                self._confirm_wumpus(pos)
+                break
+
+    def is_wumpus_certain(self, pos):
+        """Kiểm tra chắc chắn có wumpus tại vị trí"""
+        return pos in self.confirmed_wumpus
+
+    # def get_possible_wumpus(self):
+    #     """Lấy danh sách các ô có thể có wumpus"""
+    #     return [pos for pos, facts in self.kb.items() 
+    #             if facts['possible_wumpus'] and not facts['visited']]
+    
+    # def get_possible_wumpus(self):
+    #     return [pos for pos, facts in self.kb.items() if facts.get('possible_wumpus', False)]
+    def get_possible_wumpus(self):
+        return [pos for pos, facts in self.kb.items() 
+                if facts.get('possible_wumpus', False) and not facts.get('visited', False)]
+
+
+#     def is_wumpus_certain(self, pos):
+#         # Simple heuristic: if only one possible wumpus location near stench
+#         return self.kb.get(pos, {}).get('possible_wumpus', False)
+# #         self.escaped = False
 
     def _mark_possible_danger(self, neighbors, danger_type):
         """Mark neighbors as possibly dangerous if not already ruled out"""
@@ -234,14 +305,7 @@ class Inference:
 
     def get_kb(self):
         return self.kb
-    
-    def get_possible_wumpus(self):
-        return [pos for pos, facts in self.kb.items() if facts.get('possible_wumpus', False)]
 
-    def is_wumpus_certain(self, pos):
-        # Simple heuristic: if only one possible wumpus location near stench
-        return self.kb.get(pos, {}).get('possible_wumpus', False)
-#         self.escaped = False
     
     def can_shoot_wumpus(self, agent_pos, agent_dir):
         """Check if agent can shoot wumpus in current direction"""
@@ -262,8 +326,32 @@ class Inference:
             current_y += dy
         return False
 
+    # def remove_wumpus_after_kill(self, agent_pos, agent_dir):
+    #     """Remove wumpus from KB after successful kill"""
+    #     x, y = agent_pos
+    #     dx, dy = {
+    #         "NORTH": (0, 1),
+    #         "EAST": (1, 0),
+    #         "SOUTH": (0, -1), 
+    #         "WEST": (-1, 0)
+    #     }.get(agent_dir, (0, 0))
+        
+    #     current_x, current_y = x + dx, y + dy
+    #     while 0 <= current_x < self.size and 0 <= current_y < self.size:
+    #         pos = (current_x, current_y)
+    #         if pos in self.kb and self.kb[pos].get('possible_wumpus', False):
+    #             self.kb[pos]['possible_wumpus'] = False
+    #             self.kb[pos]['safe'] = True
+    #             # Update neighbors that no longer have stench
+    #             for neighbor in get_neighbors(pos, self.size):
+    #                 self._ensure_kb(neighbor)
+    #             break
+    #         current_x += dx
+    #         current_y += dy
+        
+    #     self._update_safety()
     def remove_wumpus_after_kill(self, agent_pos, agent_dir):
-        """Remove wumpus from KB after successful kill"""
+        """Xóa Wumpus khỏi KB và cập nhật các ô xung quanh sau khi giết thành công"""
         x, y = agent_pos
         dx, dy = {
             "NORTH": (0, 1),
@@ -276,48 +364,30 @@ class Inference:
         while 0 <= current_x < self.size and 0 <= current_y < self.size:
             pos = (current_x, current_y)
             if pos in self.kb and self.kb[pos].get('possible_wumpus', False):
+                # Xác nhận Wumpus đã bị giết
                 self.kb[pos]['possible_wumpus'] = False
                 self.kb[pos]['safe'] = True
-                # Update neighbors that no longer have stench
+                self.confirmed_wumpus.discard(pos)
+
+                # Kiểm tra và cập nhật các ô xung quanh Wumpus bị giết
                 for neighbor in get_neighbors(pos, self.size):
                     self._ensure_kb(neighbor)
-                break
+
+                    # Nếu ô này từng có stench, kiểm tra xem còn Wumpus nào khác tạo ra không
+                    if self.percepts.get(neighbor, {}).get('stench', False):
+                        still_has_wumpus = False
+                        for other in get_neighbors(neighbor, self.size):
+                            if self.kb.get(other, {}).get('possible_wumpus', False):
+                                still_has_wumpus = True
+                                break
+                        
+                        # Nếu không còn Wumpus nào khác gây stench, xóa stench
+                        if not still_has_wumpus:
+                            self.percepts[neighbor]['stench'] = False
+
+                break  # Dừng sau khi xử lý Wumpus bị giết
             current_x += dx
             current_y += dy
-        
+
         self._update_safety()
-
-    def _advanced_wumpus_inference(self):
-        # Tạo danh sách các ô có stench
-        stench_positions = [pos for pos, percept in self.percepts.items() if percept['stench']]
-
-        # Tạo bản đồ các ô có thể là Wumpus và số stench chúng giải thích
-        wumpus_candidates = defaultdict(int)
-
-        for pos in self.get_possible_wumpus():
-            for stench_pos in stench_positions:
-                if pos in get_neighbors(stench_pos, self.size):
-                    wumpus_candidates[pos] += 1
-
-        # Tìm ô giải thích được nhiều stench nhất
-        if wumpus_candidates:
-            best_wumpus = max(wumpus_candidates.items(), key=lambda x: x[1])[0]
-            if wumpus_candidates[best_wumpus] == len(stench_positions):
-                self._confirm_wumpus(best_wumpus)
-
-    def _confirm_wumpus(self, pos):
-        """Xác nhận ô có Wumpus"""
-        self.confirmed_wumpus = pos
-        self.kb[pos].update({
-            'possible_wumpus': True,
-            'safe': False
-        })
-        # Các ô lân cận không còn là possible wumpus (vì chỉ có 1 Wumpus trong toàn bản đồ)
-        for neighbor in get_neighbors(pos, self.size):
-            if neighbor != pos:
-                self.kb[neighbor]['possible_wumpus'] = False
-
-
-
-
 
