@@ -229,57 +229,7 @@ class Inference:
         # Simple heuristic: if only one possible wumpus location near stench
         return self.kb.get(pos, {}).get('possible_wumpus', False)
 #         self.escaped = False
-
-#     def step(self):
-#         if self.escaped:
-#             return "Already escaped."
-
-#         percepts = self.env.get_percepts(self.x, self.y)
-#         self.inference.update_knowledge((self.x, self.y), percepts)
-
-#         # Nếu có gold => grab
-#         if percepts["glitter"] and not self.has_gold:
-#             self.has_gold = True
-#             result = self.env.grab_gold()
-#             self.action_log.append("GRAB")
-#             return "Grabbed gold."
-
-#         # Nếu có gold và đang ở (0,0) => climb ra
-#         if self.has_gold and (self.x, self.y) == (0, 0):
-#             result = self.env.climb_out()
-#             self.escaped = result["escaped"]
-#             self.action_log.append("CLIMB")
-#             return "Climbed out with gold!" if self.escaped else "Climb failed."
-
-#         # Nếu có gold, lên kế hoạch quay về (0,0)
-#         if self.has_gold:
-#             path_home = astar_search((self.x, self.y), (0, 0), self.inference.is_safe, self.env.size)
-#             if path_home:
-#                 next_move = path_home[0]
-#                 self.move_to(next_move)
-#                 return f"Move home to {next_move}"
-#             else:
-#                 return "No path home!"
-
-#         # Nếu chưa có gold, tìm ô an toàn để đi tới
-#         targets = self.inference.get_safe_unvisited_neighbors((self.x, self.y))
-#         if targets:
-#             target = targets[0]
-#             path = astar_search((self.x, self.y), target, self.inference.is_safe, self.env.size)
-#             if path:
-#                 next_move = path[0]
-#                 self.move_to(next_move)
-#                 return f"Move to safe cell {next_move}"
-
-#         # Nếu không còn ô an toàn để đi và chưa có gold
-#         return "Stuck. No safe moves."
-
-#     def move_to(self, next_pos):
-#         self.x, self.y = next_pos
-#         self.path.append(next_pos)
-#         self.env.move_agent(self.x, self.y)
-#         self.action_log.append(f"MOVE to {next_pos}")
-
+    
     def can_shoot_wumpus(self, agent_pos, agent_dir):
         """Check if agent can shoot wumpus in current direction"""
         x, y = agent_pos

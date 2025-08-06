@@ -1,43 +1,28 @@
 == WUMPUS WORLD AGENT RESULT ==
 
-Final score: 976
+Final score: 982
 Gold collected: Yes
-Total steps: 36
+Total steps: 21
 
 Action log:
-Step  1: Pos (1, 0) - Action: MOVE            | Point: -1
-Step  2: Pos (0, 0) - Action: MOVE            | Point: -2
-Step  3: Pos (0, 1) - Action: MOVE            | Point: -3
-Step  4: Pos (1, 1) - Action: MOVE            | Point: -4
-Step  5: Pos (2, 1) - Action: MOVE            | Point: -5
-Step  6: Pos (1, 1) - Action: MOVE            | Point: -6
-Step  7: Pos (1, 2) - Action: MOVE            | Point: -7
-Step  8: Pos (2, 2) - Action: MOVE            | Point: -8
-Step  9: Pos (3, 2) - Action: MOVE            | Point: -9
-Step 10: Pos (2, 2) - Action: MOVE            | Point: -10
-Step 11: Pos (2, 3) - Action: MOVE            | Point: -11
-Step 12: Pos (3, 3) - Action: MOVE            | Point: -12
-Step 13: Pos (4, 3) - Action: MOVE            | Point: -13
-Step 14: Pos (5, 3) - Action: MOVE            | Point: -14
-Step 15: Pos (6, 3) - Action: MOVE            | Point: -15
-Step 16: Pos (7, 3) - Action: MOVE            | Point: -16
-Step 17: Pos (8, 3) - Action: MOVE            | Point: -17
-Step 18: Pos (9, 3) - Action: MOVE            | Point: -18
-Step 19: Pos (10, 3) - Action: MOVE            | Point: -19
-Step 20: Pos (10, 4) - Action: MOVE            | Point: -20
-Step 21: Pos (10, 4) - Action: GRAB            | Point: -10
-Step 22: Pos (9, 4) - Action: MOVE            | Point: -11
-Step 23: Pos (8, 4) - Action: MOVE            | Point: -12
-Step 24: Pos (7, 4) - Action: MOVE            | Point: -13
-Step 25: Pos (6, 4) - Action: MOVE            | Point: -14
-Step 26: Pos (5, 4) - Action: MOVE            | Point: -15
-Step 27: Pos (4, 4) - Action: MOVE            | Point: -16
-Step 28: Pos (3, 4) - Action: MOVE            | Point: -17
-Step 29: Pos (2, 4) - Action: MOVE            | Point: -18
-Step 30: Pos (1, 4) - Action: MOVE            | Point: -19
-Step 31: Pos (0, 4) - Action: MOVE            | Point: -20
-Step 32: Pos (0, 3) - Action: MOVE            | Point: -21
-Step 33: Pos (0, 2) - Action: MOVE            | Point: -22
-Step 34: Pos (0, 1) - Action: MOVE            | Point: -23
-Step 35: Pos (0, 0) - Action: MOVE            | Point: -24
-Step 36: Pos (0, 0) - Action: CLIMB           | Point: 976
+Step  1: Pos (0, 1) - Action: MOVE            | Point: -1
+Step  2: Pos (1, 1) - Action: MOVE            | Point: -2
+Step  3: Pos (2, 1) - Action: MOVE            | Point: -3
+Step  4: Pos (2, 2) - Action: MOVE            | Point: -4
+Step  5: Pos (1, 2) - Action: MOVE            | Point: -5
+Step  6: Pos (0, 2) - Action: MOVE            | Point: -6
+Step  7: Pos (0, 3) - Action: MOVE            | Point: -7
+Step  8: Pos (0, 3) - Action: SHOOT_HIT       | Point: -17
+Step  9: Pos (1, 3) - Action: MOVE            | Point: -18
+Step 10: Pos (2, 3) - Action: MOVE            | Point: -19
+Step 11: Pos (3, 3) - Action: MOVE            | Point: -20
+Step 12: Pos (3, 2) - Action: MOVE            | Point: -21
+Step 13: Pos (3, 1) - Action: MOVE            | Point: -22
+Step 14: Pos (3, 0) - Action: MOVE            | Point: -23
+Step 15: Pos (2, 0) - Action: MOVE            | Point: -24
+Step 16: Pos (2, 0) - Action: GRAB            | Point: -14
+Step 17: Pos (2, 1) - Action: MOVE            | Point: -15
+Step 18: Pos (1, 1) - Action: MOVE            | Point: -16
+Step 19: Pos (0, 1) - Action: MOVE            | Point: -17
+Step 20: Pos (0, 0) - Action: MOVE            | Point: -18
+Step 21: Pos (0, 0) - Action: CLIMB           | Point: 982
