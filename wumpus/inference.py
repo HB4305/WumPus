@@ -305,6 +305,19 @@ class Inference:
             if wumpus_candidates[best_wumpus] == len(stench_positions):
                 self._confirm_wumpus(best_wumpus)
 
+    def _confirm_wumpus(self, pos):
+        """Xác nhận ô có Wumpus"""
+        self.confirmed_wumpus = pos
+        self.kb[pos].update({
+            'possible_wumpus': True,
+            'safe': False
+        })
+        # Các ô lân cận không còn là possible wumpus (vì chỉ có 1 Wumpus trong toàn bản đồ)
+        for neighbor in get_neighbors(pos, self.size):
+            if neighbor != pos:
+                self.kb[neighbor]['possible_wumpus'] = False
+
+
 
 
 
