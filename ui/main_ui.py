@@ -363,9 +363,9 @@ def inputForm():
     clock = pygame.time.Clock()
 
     input_boxes = [
-        {"label": "Enter map size (4 - 20):", "value": "", "type": "int"},
-        {"label": "Enter pit probability (0.0 - 1.0):", "value": "", "type": "float"},
-        {"label": "Enter number of Wumpus (1-10):", "value": "", "type": "int"},
+        {"label": "Enter map size:", "value": "", "type": "int"},
+        {"label": "Enter pit probability:", "value": "", "type": "float"},
+        {"label": "Enter number of Wumpus:", "value": "", "type": "int"},
     ]
     active_box = 0
 
@@ -414,8 +414,8 @@ def inputForm():
                             size = int(input_boxes[0]["value"])
                             prob = float(input_boxes[1]["value"])
                             wumpus = int(input_boxes[2]["value"])
-                            if 4 <= size <= 20 and 0.0 <= prob <= 1.0 and 1 <= wumpus <= 10:
-                                return size, prob, wumpus
+                            
+                            return size, prob, wumpus
                         except:
                             pass
 
