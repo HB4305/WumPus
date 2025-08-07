@@ -38,12 +38,12 @@ class Text_Display:
 
 class Info(Text_Display):
     ###3
-    def __init__(self, screen, level, agent):
+    def __init__(self, screen, level): # cái đối số agent tao xóa bỏ
         super().__init__()
         self.screen = screen
         self.left_margin = 850
         self.level_background = level
-        self.agent = agent 
+        # self.agent = agent 
     
     def reShowLeftBar(self):
         area = (self.left_margin-20, 0, WINDOW_WIDTH-(self.left_margin-20), WINDOW_HEIGHT)
@@ -55,7 +55,7 @@ class Info(Text_Display):
         
     def showScore(self, score=0):
         ###
-        score = self.agent.point
+        # score = self.agent.point
         ####
         self.write_text_content("Score: ", self.left_margin, 100, text_color=DARK_RED_COLOR)
         self.write_text_content(f"{score}", self.left_margin+155, 100, text_color=DARK_RED_COLOR)
