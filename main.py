@@ -53,7 +53,7 @@ def main():
     print("Generated grid:", env.grid)
     print("Grid type:", type(env.grid))
 
-    write_map_to_file("/Users/macbook/Documents/Năm 2/Kỳ 3/CSAI/Project 2/PumPus/input/wumpus_world_map.txt", env.grid)
+    write_map_to_file("input/wumpus_world_map.txt", env.grid)
 
 
     print(

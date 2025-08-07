@@ -198,13 +198,13 @@
 #                 potion = path[i][4] if len(path[i]) > 4 else 0
 
 #                 M2.showPath(y, x)
-#                 M2.showAgent(y, x, M2.h)
+#                 M2.showAgent(x, y, M2.h)
 
 #                 if action == 'Turn Left':
 #                     pygame.display.flip()
 #                     pygame.time.wait(time_wait_1)
 #                     direction = M2.turnLeft(direction)
-#                     M2.showAgent(y, x, M2.h)
+#                     M2.showAgent(x, y, M2.h)
 #                     pygame.display.flip()
 #                     pygame.time.wait(time_wait_2)
 
@@ -212,7 +212,7 @@
 #                     pygame.display.flip()
 #                     pygame.time.wait(time_wait_1)
 #                     direction = M2.turnRight(direction)
-#                     M2.showAgent(y, x, M2.h)
+#                     M2.showAgent(x, y, M2.h)
 #                     pygame.display.flip()
 #                     pygame.time.wait(time_wait_2)
 
@@ -571,13 +571,13 @@ def showAgentMove(_, path, maps_data, __):
                 current_score = calculateScore(action, current_score, has_gold, died)
 
                 M2.showPath(y, x)
-                M2.showAgent(y, x, M2.h)
+                M2.showAgent(x, y, M2.h)
 
                 if action == 'Turn Left':
                     pygame.display.flip()
                     pygame.time.wait(time_wait_1)
                     direction = M2.turnLeft(direction)
-                    M2.showAgent(y, x, M2.h)
+                    M2.showAgent(x, y, M2.h)
                     pygame.display.flip()
                     pygame.time.wait(time_wait_2)
 
@@ -585,7 +585,7 @@ def showAgentMove(_, path, maps_data, __):
                     pygame.display.flip()
                     pygame.time.wait(time_wait_1)
                     direction = M2.turnRight(direction)
-                    M2.showAgent(y, x, M2.h)
+                    M2.showAgent(x, y, M2.h)
                     pygame.display.flip()
                     pygame.time.wait(time_wait_2)
 
