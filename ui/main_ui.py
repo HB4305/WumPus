@@ -176,14 +176,21 @@ def showAgentMove(_, path, maps_data, __):
         for row in env_grid:
             map_row = []
             for cell in row:
-                map_row.append([
-                    'W' if cell.wumpus else 'P' if cell.pit else 'G' if cell.gold else '-',
-                    cell.stench,
-                    cell.breeze,
-                    cell.pit,
-                    cell.glitter,
+                # Create proper cell data with the right format
+                cell_data = [
+                    ('W' if getattr(cell, 'wumpus', False) else '') + 
+                    ('P' if getattr(cell, 'pit', False) else '') + 
+                    ('G' if getattr(cell, 'gold', False) else ''),
+                    getattr(cell, 'stench', False),
+                    getattr(cell, 'breeze', False),
+                    False,  # whiff (not used in basic Wumpus)
+                    getattr(cell, 'glitter', False),
                     False  # scream
-                ])
+                ]
+                # If cell is empty, mark it as '-'
+                if cell_data[0] == '':
+                    cell_data[0] = '-'
+                map_row.append(cell_data)
             map_layer.append(map_row)
         maps.append(map_layer)
 
@@ -195,7 +202,7 @@ def showAgentMove(_, path, maps_data, __):
 
     while True:
         if isMoving:
-            y_shoot, x_shoot = -1, -1
+            x_shoot, y_shoot = -1, -1
             for i in range(len(path)):
                 for event in pygame.event.get():
                     if event.type == QUIT:
@@ -205,31 +212,33 @@ def showAgentMove(_, path, maps_data, __):
                         return
 
                 if i > 0:
-                    M2.showPath(path[i - 1][0][0], path[i - 1][0][1])
+                    # Get coordinates consistently as (x,y)
+                    prev_x, prev_y = path[i - 1][0]
+                    M2.showPath(prev_x, prev_y)
 
-                y, x = path[i][0]
+                x, y = path[i][0]  # x is column, y is row
                 action = path[i][1]
                 
                 # Calculate score based on action
                 if action == 'Grab Gold':
                     has_gold = True
                 
-                # Check if agent died (you may need to adjust this based on your path data structure)
+                # Check if agent died
                 died = False
                 if len(path[i]) > 3:
-                    # Assuming path[i][3] indicates HP or death status
                     died = path[i][3] == 0
                 
                 current_score = calculateScore(action, current_score, has_gold, died)
 
-                M2.showPath(y, x)
-                M2.showAgent(x, y, M2.h)
+                # Show the path and agent at current position using x,y
+                M2.showPath(x, y)
+                M2.showAgent(y, x, M2.h)  # Note: showAgent uses y,x internally
 
                 if action == 'Turn Left':
                     pygame.display.flip()
                     pygame.time.wait(time_wait_1)
                     direction = M2.turnLeft(direction)
-                    M2.showAgent(x, y, M2.h)
+                    M2.showAgent(y, x, M2.h)
                     pygame.display.flip()
                     pygame.time.wait(time_wait_2)
 
@@ -237,7 +246,7 @@ def showAgentMove(_, path, maps_data, __):
                     pygame.display.flip()
                     pygame.time.wait(time_wait_1)
                     direction = M2.turnRight(direction)
-                    M2.showAgent(x, y, M2.h)
+                    M2.showAgent(y, x, M2.h)
                     pygame.display.flip()
                     pygame.time.wait(time_wait_2)
 
@@ -250,20 +259,27 @@ def showAgentMove(_, path, maps_data, __):
                         count_map += 1
 
                 elif action == 'Shoot':
-                    y_shoot, x_shoot = M2.agentShoot(path, i, direction)
-                    if M2.map_data[y][x][5]:
-                        M2.showScream(y, x, M2.h)
-                        pygame.display.flip()
-                        pygame.time.wait(time_wait_4)
+                    x_shoot, y_shoot = M2.agentShoot(path, i, direction)
+                    # Check for scream in the current cell - y,x for array access
+                    if len(maps) > count_map and y < len(maps[count_map]) and x < len(maps[count_map][y]):
+                        if maps[count_map][y][x][5]:  # Check for scream
+                            M2.showScream(y, x, M2.h)
+                            pygame.display.flip()
+                            pygame.time.wait(time_wait_4)
+                        else:
+                            pygame.display.flip()
+                            pygame.time.wait(time_wait_3)
                     else:
                         pygame.display.flip()
                         pygame.time.wait(time_wait_3)
+                        
                     if count_map + 1 < len(maps):
                         M2.updateMap(maps[count_map + 1])
                         count_map += 1
 
                 if i > 0 and action != 'Shoot' and path[i - 1][1] == 'Shoot':
-                    M2.showUnknown(y_shoot, x_shoot, M2.h)
+                    if x_shoot >= 0 and y_shoot >= 0:
+                        M2.showUnknown(y_shoot, x_shoot, M2.h)
 
                 # Show only score
                 I2.showLeftBar(map_size, score=current_score)
@@ -279,11 +295,13 @@ def showAgentMove(_, path, maps_data, __):
                 I2.showNoti(3)  # Death notification
             elif final_action == 'Climb':
                 I2.showNoti(2)  # Success notification
-                M2.showPath(path[-1][0][0], path[-1][0][1])
+                final_x, final_y = path[-1][0]
+                M2.showPath(final_x, final_y)
             else:
                 I2.showNoti(4)  # Other ending
-                M2.showPath(path[-1][0][0], path[-1][0][1])
-                M2.showDie(path[-1][0][0], path[-1][0][1], M2.h)
+                final_x, final_y = path[-1][0]
+                M2.showPath(final_x, final_y)
+                M2.showDie(final_y, final_x, M2.h)
 
             I2.showLeftBar(map_size, score=final_score)
             pygame.display.flip()

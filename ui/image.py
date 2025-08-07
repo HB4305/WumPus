@@ -166,21 +166,25 @@ class Map(ImageElement):
         return self.cell_side
     
     def agentShoot(self, path, now, drirection):
-        y =  path[now][0][0]
-        x =  path[now][0][1]
+        # Path coordinates are in (x,y) format in your updated code
+        x = path[now][0][0]
+        y = path[now][0][1]
+        
         # mod = 0: right, 1: up, 2: left, 3: down
-        if drirection % 4 == 0:
-            self.showShoot(y, x+1, self.h)
-            return y, x+1
-        elif drirection % 4 == 1:
-            self.showShoot(y+1, x, self.h)
-            return y+1, x
-        elif drirection % 4 == 2:
-            self.showShoot(y, x-1, self.h)
-            return y, x-1
-        elif drirection % 4 == 3:
-            self.showShoot(y-1, x, self.h)
-            return y-1, x
+        shoot_x, shoot_y = x, y  # Default values
+        if drirection % 4 == 0:  # right
+            shoot_x, shoot_y = x + 1, y
+        elif drirection % 4 == 1:  # up
+            shoot_x, shoot_y = x, y + 1
+        elif drirection % 4 == 2:  # left
+            shoot_x, shoot_y = x - 1, y
+        elif drirection % 4 == 3:  # down
+            shoot_x, shoot_y = x, y - 1
+            
+        # Make sure we're within bounds
+        if 0 <= shoot_y < self.h and 0 <= shoot_x < self.w:
+            self.showShoot(shoot_y, shoot_x, self.h)
+        return shoot_x, shoot_y
     
     def showUnknownBoard(self): # Show game map with unvisitted cells
         y = 0
@@ -195,14 +199,18 @@ class Map(ImageElement):
         #[element, stench, breeze, whiff, glow, scream]
         for y in range (0, self.h):
             for x in range (0, self.w):
-                self.showPath(y, x)
-    
-    def showPath(self, y, x): # Show visitted cells
+                self.showPath(x, y)
+
+    def showPath(self, x, y): # Show visitted cells - x is column, y is row
         #[element, stench, breeze, whiff, glow, scream]
         self.showEmpty(y, x, self.h)
         
+        # Handle different data formats - check array bounds first
+        if y >= len(self.map_data) or x >= len(self.map_data[0]):
+            return
+            
         # Handle different data formats
-        if isinstance(self.map_data[y][x], list) and len(self.map_data[y][x]) > 0:
+        if isinstance(self.map_data[y][x], list):
             # Format: [element, stench, breeze, whiff, glow, scream]
             element = self.map_data[y][x][0] if len(self.map_data[y][x]) > 0 else ''
             stench = self.map_data[y][x][1] if len(self.map_data[y][x]) > 1 else False
@@ -225,11 +233,11 @@ class Map(ImageElement):
                 
             stench = getattr(cell, 'stench', False)
             breeze = getattr(cell, 'breeze', False)
-            whiff = False  # Not used in basic Wumpus World
+            whiff = getattr(cell, 'whiff', False)  # Added attribute check
             glow = getattr(cell, 'glitter', False)
-            scream = False  # Handled separately
+            scream = getattr(cell, 'scream', False)  # Added attribute check
         
-        # Show elements
+        # Show elements - use y,x for drawing as per your original methods
         if 'A' in element:
             self.showAgent(y, x, self.h)
         if 'G' in element:
@@ -242,7 +250,7 @@ class Map(ImageElement):
             self.showPoisonousGas(y, x, self.h)
         if 'H_P' in element:
             self.showHealingPotion(y, x, self.h)
-        
+
         # Show effects
         if stench:
             self.showStench(y, x, self.h)
