@@ -178,12 +178,13 @@ class Inference:
 
         for pos in self.get_possible_wumpus():
             for stench_pos in stench_positions:
-                if pos in get_neighbors(stench_pos, self.size):
+                if pos in get_neighbors(stench_pos, self.size): # get neighbors của các vị trí có stench, nếu có pos 
                     wumpus_candidates[pos] += 1
 
         if wumpus_candidates:
             best_wumpus = max(wumpus_candidates.items(), key=lambda x: x[1])[0]
-            if wumpus_candidates[best_wumpus] == len(stench_positions):
+            # if wumpus_candidates[best_wumpus] == len(stench_positions):
+            if wumpus_candidates[best_wumpus] == 4:
                 self._confirm_wumpus(best_wumpus)
     
     def _confirm_wumpus(self, pos):
@@ -193,11 +194,6 @@ class Inference:
             'possible_wumpus': True,
             'safe': False
         })
-        # Các ô khác không còn là possible_wumpus
-        for neighbor in get_neighbors(pos, self.size):
-            if neighbor != pos and neighbor not in self.confirmed_wumpus:
-                self.kb[neighbor]['possible_wumpus'] = False
-                self.confirmed_no_wumpus.add(neighbor)
 
     def _wumpus_explains_all_stench(self, wumpus_pos):
         """Kiểm tra nếu wumpus này giải thích được tất cả stench đã thấy"""
