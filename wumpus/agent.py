@@ -14,6 +14,7 @@ class Agent:
         self.action_log = []
         self.escaped = False
         self.dead = False
+        
 
     def step(self):
         if self.escaped or self.dead:

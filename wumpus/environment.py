@@ -123,7 +123,7 @@ class Cell:
         self.glitter = False
 
 class Environment:
-    def __init__(self, size=8, k=2, pit_prob=0.2):
+    def __init__(self, size=8, k=2, pit_prob = 0.2):
         self.size = size
         self.grid = [[Cell() for _ in range(size)] for _ in range(size)]
         self.wumpus_positions = set()
