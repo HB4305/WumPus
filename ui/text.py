@@ -37,11 +37,13 @@ class Text_Display:
         
 
 class Info(Text_Display):
-    def __init__(self, screen, level):
+    ###3
+    def __init__(self, screen, level, agent):
         super().__init__()
         self.screen = screen
         self.left_margin = 850
         self.level_background = level
+        self.agent = agent 
     
     def reShowLeftBar(self):
         area = (self.left_margin-20, 0, WINDOW_WIDTH-(self.left_margin-20), WINDOW_HEIGHT)
@@ -52,6 +54,9 @@ class Info(Text_Display):
         self.write_text_content(map_title, self.left_margin, 50, text_color=DARK_RED_COLOR)
         
     def showScore(self, score=0):
+        ###
+        score = self.agent.point
+        ####
         self.write_text_content("Score: ", self.left_margin, 100, text_color=DARK_RED_COLOR)
         self.write_text_content(f"{score}", self.left_margin+155, 100, text_color=DARK_RED_COLOR)
 
@@ -59,7 +64,8 @@ class Info(Text_Display):
         area = (self.left_margin-20, 0, WINDOW_WIDTH-(self.left_margin-20), SHOW_NOTI_HEIGHT)
         showGameBackground(self.screen, area, self.level_background)
         self.showMapInfo(choose_map_result)
-        self.showScore(score)
+        # self.showScore(score)
+        self.showScore()
     
     def showNoti(self, noti):
         area = (BOARD_APPEEAR_WIDTH, SHOW_NOTI_HEIGHT, WINDOW_WIDTH-BOARD_APPEEAR_WIDTH, WINDOW_HEIGHT - SHOW_NOTI_HEIGHT)
