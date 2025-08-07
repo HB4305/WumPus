@@ -199,6 +199,9 @@ def showAgentMove(_, path, maps_data, __):
     
     # Calculate map size
     map_size = len(maps[0]) if maps and len(maps[0]) > 0 else 4
+    
+    # Track killed wumpus positions to ensure they remain invisible
+    killed_wumpus_positions = set()
 
     while True:
         if isMoving:
@@ -258,28 +261,49 @@ def showAgentMove(_, path, maps_data, __):
                         M2.updateMap(maps[count_map + 1])
                         count_map += 1
 
-                elif action == 'Shoot':
+                # Bảo thêm
+                elif action == 'Shoot' or action == 'SHOOT_HIT' or action == 'SHOOT_MISS':
                     x_shoot, y_shoot = M2.agentShoot(path, i, direction)
-                    # Check for scream in the current cell - y,x for array access
-                    if len(maps) > count_map and y < len(maps[count_map]) and x < len(maps[count_map][y]):
-                        if maps[count_map][y][x][5]:  # Check for scream
-                            M2.showScream(y, x, M2.h)
-                            pygame.display.flip()
-                            pygame.time.wait(time_wait_4)
-                        else:
-                            pygame.display.flip()
-                            pygame.time.wait(time_wait_3)
-                    else:
+                    pygame.display.flip()
+                    pygame.time.wait(time_wait_3)
+                    
+                    # If it was a successful shot (SHOOT_HIT)
+                    if action == 'SHOOT_HIT' or (len(maps) > count_map and y < len(maps[count_map]) and 
+                             x < len(maps[count_map][y]) and maps[count_map][y][x][5]):
+                        # Show scream animation
+                        M2.showScream(y_shoot, x_shoot, M2.h)
                         pygame.display.flip()
-                        pygame.time.wait(time_wait_3)
+                        pygame.time.wait(time_wait_4)
                         
-                    if count_map + 1 < len(maps):
-                        M2.updateMap(maps[count_map + 1])
-                        count_map += 1
-
-                if i > 0 and action != 'Shoot' and path[i - 1][1] == 'Shoot':
-                    if x_shoot >= 0 and y_shoot >= 0:
-                        M2.showUnknown(y_shoot, x_shoot, M2.h)
+                        # Mark this wumpus as killed
+                        killed_wumpus_positions.add((x_shoot, y_shoot))
+                        
+                        # Update map to show wumpus is gone
+                        if count_map + 1 < len(maps):
+                            # Ensure wumpus is removed from all future maps
+                            for future_map_idx in range(count_map + 1, len(maps)):
+                                if y_shoot < len(maps[future_map_idx]) and x_shoot < len(maps[future_map_idx][y_shoot]):
+                                    # Remove wumpus from cell content (first element)
+                                    cell_content = maps[future_map_idx][y_shoot][x_shoot][0]
+                                    maps[future_map_idx][y_shoot][x_shoot][0] = cell_content.replace('W', '')
+                                    if maps[future_map_idx][y_shoot][x_shoot][0] == '':
+                                        maps[future_map_idx][y_shoot][x_shoot][0] = '-'
+                                    
+                                    # Remove stench from neighboring cells
+                                    for nx, ny in [(x_shoot+1, y_shoot), (x_shoot-1, y_shoot), 
+                                                  (x_shoot, y_shoot+1), (x_shoot, y_shoot-1)]:
+                                        if (0 <= nx < map_size and 0 <= ny < map_size and
+                                            ny < len(maps[future_map_idx]) and nx < len(maps[future_map_idx][ny])):
+                                            maps[future_map_idx][ny][nx][1] = False  # Set stench to False
+                            
+                            # Update the current display map
+                            M2.updateMap(maps[count_map + 1])
+                            count_map += 1
+                    
+                    # Ensure no wumpus is shown at killed positions
+                    for kx, ky in killed_wumpus_positions:
+                        if 0 <= kx < map_size and 0 <= ky < map_size:
+                            M2.showEmpty(ky, kx, M2.h)
 
                 # Show only score
                 I2.showLeftBar(map_size, score=current_score)

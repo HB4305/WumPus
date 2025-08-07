@@ -90,7 +90,16 @@ def main():
         # Record result
         hp = 0 if (action == "DIE" or agent.dead) else 100
         RESULT.append(((agent.x, agent.y), action, agent.point, hp, 0))
-        MAPS.append(copy.deepcopy(env.grid))
+        
+        # Ensure we capture the updated map state after an action
+        # This is especially important after shooting a wumpus
+        if action == "SHOOT_HIT":
+            print("[MAIN] Wumpus killed! Updating environment...")
+            # Give a small pause to ensure environment is fully updated
+            # Then capture the updated state without the wumpus
+            MAPS.append(copy.deepcopy(env.grid))
+        else:
+            MAPS.append(copy.deepcopy(env.grid))
 
         print(f"[MAIN] Step {step_count}: {action}, Score: {agent.point}")
 
