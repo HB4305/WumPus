@@ -120,6 +120,8 @@ def showWumpusWorld(map_data):
     M1 = Map(screen, map_data)
     showGameBackground(screen, level=1)
     M1.showUnknownBoard()
+    # Reveal starting position (0,0) and show agent there
+    M1.showPath(0, 0)  # Reveal the starting cell
     I1 = Info(screen, level=1)
     # Calculate map size from map_data
     map_size = len(map_data) if map_data else 4
@@ -196,6 +198,13 @@ def showAgentMove(_, path, maps_data, __, agent_point):
     map_size = len(maps[0]) if maps and len(maps[0]) > 0 else 4
     killed_wumpus_positions = set()
 
+    # Initialize display - show starting position with agent
+    showGameBackground(screen, level=1)
+    M2.showUnknownBoard()
+    M2.showPath(0, 0)  # Reveal starting cell
+    M2.showAgent(0, 0, M2.h)  # Show agent at starting position
+    I2.showLeftBar(map_size, score=0)
+
     # Draw control buttons
     def draw_buttons():
         # Auto Play button
@@ -238,9 +247,13 @@ def showAgentMove(_, path, maps_data, __, agent_point):
             
         i = current_step
         
+        # Clear agent from previous position
         if i > 0:
             prev_x, prev_y = path[i - 1][0]
-            M2.showPath(prev_x, prev_y)
+            M2.showPath(prev_x, prev_y)  # This removes agent and shows cell content only
+        else:
+            # For first step, clear agent from starting position (0,0)
+            M2.showPath(0, 0)
 
         x, y = path[i][0]
         action = path[i][1]
@@ -351,6 +364,8 @@ def showAgentMove(_, path, maps_data, __, agent_point):
                         showGameBackground(screen, level=1)
                         M2 = Map(screen, maps[0] if maps else [])
                         M2.showUnknownBoard()
+                        M2.showPath(0, 0)  # Reveal starting cell
+                        M2.showAgent(0, 0, M2.h)  # Show agent at starting position
                         I2.showLeftBar(map_size, score=0)
                     elif selected_button == 3:  # Exit button
                         return  # Return to menu
