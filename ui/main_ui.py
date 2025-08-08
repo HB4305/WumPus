@@ -179,9 +179,9 @@ def showAgentMove(_, path, maps_data, __, agent_point):
                 if element == '':
                     element = '-'
                 
-                # Only show stench/breeze as effects if the cell doesn't have main elements
-                stench = getattr(cell, 'stench', False) and not (has_wumpus or has_pit or has_gold)
-                breeze = getattr(cell, 'breeze', False) and not (has_wumpus or has_pit or has_gold)
+                # Always show stench and breeze when they exist, regardless of main elements
+                stench = getattr(cell, 'stench', False)
+                breeze = getattr(cell, 'breeze', False)
                 
                 cell_data = [
                     element,
