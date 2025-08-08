@@ -78,110 +78,6 @@ class Agent:
                         target_dir = "SOUTH"
         return target_dir
 
-    # def step(self):
-    #     if self.escaped or self.dead:
-    #         return "STAY"
-
-    #     # Check if agent died BEFORE taking action
-    #     if self.check_death():
-    #         self.dead = True
-    #         self.point -= 1000
-    #         return "DIE"
-
-    #     # Get current percepts and update knowledge
-    #     percepts = self.env.get_percepts(self.x, self.y)
-    #     self.inference.update_knowledge((self.x, self.y), percepts)
-
-    #     # If found gold, grab it
-    #     if percepts["glitter"] and not self.has_gold:
-    #         self.has_gold = True
-    #         result = self.env.grab_gold()
-    #         self.action_log.append("GRAB")
-    #         self.point += 10
-    #         return "GRAB"
-
-    #     # If has gold and at start, climb out
-    #     if self.has_gold and (self.x, self.y) == (0, 0):
-    #         result = self.env.climb_out()
-    #         self.escaped = result["escaped"]
-    #         self.action_log.append("CLIMB")
-    #         if self.escaped:
-    #             self.point += 1000
-    #         return "CLIMB"
-
-    #     # If has gold, go home
-    #     if self.has_gold:
-    #         path_home = astar_search((self.x, self.y), (0, 0), 
-    #                                self.inference.is_safe, self.env.size)
-    #         if path_home:
-    #             next_pos = path_home[0]
-    #             # self.face_towards(next_pos)   # ✅ xoay trước
-    #             if self.is_move_safe(next_pos):
-    #                 self.move_to(next_pos)
-    #                 return "MOVE"
-    #             else:
-    #                 return "STUCK"
-    #         else:
-    #             return "STUCK"
-
-    #     # Try to shoot wumpus if possible and beneficial
-    #     if (self.has_arrow and percepts["stench"] and self.can_shoot_wumpus_safely()):
-    #         # result = self.env.shoot_arrow()
-    #         # self.has_arrow = False
-    #         # self.point -= 10
-    #         # if result["scream"]:
-    #         #     self.inference.remove_wumpus_after_kill((self.x, self.y), self.direction)
-    #         #     self.action_log.append("SHOOT_HIT")
-    #         #     return "SHOOT_HIT"
-    #         # else:
-    #         #     self.action_log.append("SHOOT_MISS")
-    #         #     return "SHOOT_MISS"
-    #         target_dir = self.get_wumpus_direction()
-    #         if target_dir and self.direction != target_dir:
-    #             return self.turn_towards(target_dir)
-    #         result = self.env.shoot_arrow()
-    #         self.has_arrow = False
-    #         self.point -= 10
-    #         if result["scream"]:
-    #             self.inference.remove_wumpus_after_kill((self.x, self.y), self.direction)
-    #             self.action_log.append("SHOOT_HIT")
-    #             return "SHOOT_HIT"
-    #         else:
-    #             self.action_log.append("SHOOT_MISS")
-    #             return "SHOOT_MISS"
-
-    #     # Look for safe unvisited neighbors
-    #     safe_neighbors = self.get_truly_safe_neighbors()
-    #     if safe_neighbors:
-    #         # Choose the best neighbor (closest to center or unexplored)
-    #         best_neighbor = self.choose_best_neighbor(safe_neighbors)
-    #         self.move_to(best_neighbor)
-    #         return "MOVE"
-
-    #     # Find path to safe unexplored area
-    #     exploration_target = self.find_safe_exploration_target()
-    #     if exploration_target:
-    #         path = astar_search((self.x, self.y), exploration_target,
-    #                           self.inference.is_safe, self.env.size)
-    #         if path and self.is_move_safe(path[0]):
-    #             self.move_to(path[0])
-    #             return "MOVE"
-
-    #     # If no safe moves available and no gold, try to go back to start
-    #     if not self.has_gold and (self.x, self.y) != (0, 0):
-    #         path_home = astar_search((self.x, self.y), (0, 0),
-    #                                self.inference.is_safe, self.env.size)
-    #         if path_home and self.is_move_safe(path_home[0]):
-    #             self.move_to(path_home[0])
-    #             return "MOVE"
-
-
-    #     if percepts["breeze"]:
-    #         self._handle_breeze_situation()
-
-    #     # No safe moves available
-    #     return "STAY"
-
     # ======== STEP ======== #
     def step(self):
         if self.escaped or self.dead:
@@ -297,25 +193,10 @@ class Agent:
         if not (0 <= next_x < self.env.size and 0 <= next_y < self.env.size):
             return False
             
-        # # Kiểm tra trực tiếp từ environment
-        # next_cell = self.env.grid[next_y][next_x]
-        # if next_cell.pit or next_cell.wumpus:
-        #     return False
-            
         # Kiểm tra từ inference
         kb_info = self.inference.kb.get((next_x, next_y), {})
         
-        # Không an toàn nếu:
-        # - Là confirmed pit
-        # - Hoặc chưa visited và có possible pit
-        # if (next_x, next_y) in self.inference.confirmed_pits:
-        #     return False
-            
-        # if not kb_info.get('visited', False) and kb_info.get('possible_pit', False):
-        #     return False
-            
-        # return True
-        # Nếu là confirmed pit hoặc confirmed wumpus thì chắc chắn không an toàn
+        # Nếu đã thăm và có pit hoặc wumpus thì không an toàn
         if (next_x, next_y) in self.inference.confirmed_pits:
             return False
         if (next_x, next_y) in self.inference.confirmed_wumpus:
