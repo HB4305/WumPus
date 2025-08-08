@@ -61,8 +61,7 @@ class Agent:
                 return "STUCK"
 
         # Try to shoot wumpus if possible and beneficial
-        if (self.has_arrow and percepts["stench"] and 
-            self.can_shoot_wumpus_safely()):
+        if (self.has_arrow and percepts["stench"] and self.can_shoot_wumpus_safely()):
             result = self.env.shoot_arrow()
             self.has_arrow = False
             self.point -= 10
