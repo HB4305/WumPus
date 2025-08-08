@@ -193,6 +193,19 @@ def showAgentMove(_, path, maps_data, __, agent_point):
             map_layer.append(map_row)
         maps.append(map_layer)
 
+    # Store original maps for reset functionality
+    original_maps = []
+    for map_layer in maps:
+        original_map = []
+        for row in map_layer:
+            original_row = []
+            for cell in row:
+                # Deep copy each cell data
+                original_cell = [cell[0], cell[1], cell[2], cell[3], cell[4], cell[5]]
+                original_row.append(original_cell)
+            original_map.append(original_row)
+        original_maps.append(original_map)
+        
     count_map = 0 if len(maps) > 0 else 1
     M2 = Map(screen, maps[0] if maps else [])
     map_size = len(maps[0]) if maps and len(maps[0]) > 0 else 4
@@ -430,6 +443,19 @@ def showAgentMove(_, path, maps_data, __, agent_point):
                         current_score = 0
                         count_map = 0
                         killed_wumpus_positions.clear()
+                        
+                         # Restore original maps data
+                        maps = []
+                        for map_layer in original_maps:
+                            restored_map = []
+                            for row in map_layer:
+                                restored_row = []
+                                for cell in row:
+                                    # Deep copy each cell data
+                                    restored_cell = [cell[0], cell[1], cell[2], cell[3], cell[4], cell[5]]
+                                    restored_row.append(restored_cell)
+                                restored_map.append(restored_row)
+                            maps.append(restored_map)
                         # Reset map display
                         showGameBackground(screen, level=1)
                         M2 = Map(screen, maps[0] if maps else [])
