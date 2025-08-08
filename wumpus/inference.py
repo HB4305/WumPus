@@ -15,6 +15,9 @@ class Inference:
         self.confirmed_no_pits = set()  # Theo dõi ô chắc chắn không có pit
         self.confirmed_no_wumpus = set()  # Theo dõi ô chắc chắn không có Wumpus
         self.confirmed_wumpus = set()  # Theo dõi ô chắc chắn có Wumpus
+        self.breeze_cells = set()
+        self.confirmed_no_pits = set()
+        
 
     def update_knowledge(self, position, percept):
         x, y = position
@@ -45,32 +48,35 @@ class Inference:
     def _process_pit_info(self, position, has_breeze, neighbors):
         x, y = position
         
+        if has_breeze:
+            self.breeze_cells.add((x, y))  
+        
         if not has_breeze:
-            # Không có breeze => các ô lân cận không có pit
+            # Không có breeze => các ô lân cận an toàn 
             for nx, ny in neighbors:
                 if not self.kb[(nx, ny)]['visited']:
                     self.kb[(nx, ny)]['possible_pit'] = False
+                    self.kb[(nx, ny)]['safe'] = True
                     self.confirmed_no_pits.add((nx, ny))
-        else:
-            # Có breeze => ít nhất một ô lân cận có pit
-            unvisited = [pos for pos in neighbors if not self.kb[pos]['visited']]
-            
-            # Nếu chỉ có 1 ô chưa visited, đó chính là pit
-            if len(unvisited) == 1:
-                pit_pos = unvisited[0]
-                self._confirm_pit(pit_pos)
-            else:
-                # Đánh dấu các ô chưa visited là possible pit
-                for pos in unvisited:
-                    if pos not in self.confirmed_no_pits:
-                        self.kb[pos].update({
-                            'possible_pit': True,
-                            'safe': False
-                        })
-                
-                # Cross-check với các percepts breeze khác để xác định pit
-                self._advanced_pit_inference()
+            return
 
+        # Có breeze => ít nhất 1 ô xung quanh là pit
+        unvisited = [pos for pos in neighbors if not self.kb[pos]['visited']]
+
+        # Nếu chỉ có 1 ô chưa biết, đó chắc chắn là pit
+        if len(unvisited) == 1:
+            pit_pos = unvisited[0]
+            self._confirm_pit(pit_pos)
+            return
+
+        # Tạm đánh dấu các ô chưa biết là "possible pit" (nếu chưa bị loại trừ)
+        for pos in unvisited:
+            if pos not in self.confirmed_no_pits and not self.kb[pos].get('confirmed_pit', False):
+                self.kb[pos]['possible_pit'] = True
+                self.kb[pos]['safe'] = False
+
+        # Gọi inference nâng cao (kiểm tra nhiều breeze để xác định pit)
+        self._advanced_pit_inference()
 
     def _advanced_pit_inference(self):
         from collections import defaultdict

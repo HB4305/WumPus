@@ -106,6 +106,7 @@ def showMenu():
             result = inputForm()
             if result is not None:  # Only return if we got valid input
                 return result
+            ##############################################
             # If result is None, continue the menu loop
         elif choose_option == 1:  # Quit
             pygame.quit()
