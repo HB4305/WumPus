@@ -132,7 +132,8 @@ def showWumpusWorld(map_data):
 
 def showAgentMove(_, path, maps_data, __, agent_point):
     I2 = Info(screen, level=1)
-    direction = 1
+    current_direction = "EAST"  # Track agent's actual direction
+    direction = 1  # UI direction counter for rotation
     current_score = 0
     has_gold = False
     current_step = 0
@@ -253,7 +254,7 @@ def showAgentMove(_, path, maps_data, __, agent_point):
         screen.blit(step_info, (base_x, base_y - 30))
 
     def execute_step():
-        nonlocal current_step, direction, current_score, count_map, killed_wumpus_positions
+        nonlocal current_step, direction, current_score, count_map, killed_wumpus_positions, current_direction
         
         if current_step >= len(path):
             return False
@@ -284,22 +285,51 @@ def showAgentMove(_, path, maps_data, __, agent_point):
         M2.showPath(x, y)
         M2.showAgent(y, x, M2.h)
 
-        if action == 'Turn Left':
+        if action == 'Turn Left' or action == 'TURN_LEFT':
             direction = M2.turnLeft(direction)
+            # Update actual direction
+            dirs = ["NORTH", "WEST", "SOUTH", "EAST"]
+            idx = dirs.index(current_direction)
+            current_direction = dirs[(idx + 1) % 4]
             M2.showAgent(y, x, M2.h)
 
-        elif action == 'Turn Right':
+        elif action == 'Turn Right' or action == 'TURN_RIGHT':
             direction = M2.turnRight(direction)
+            # Update actual direction
+            dirs = ["NORTH", "EAST", "SOUTH", "WEST"]
+            idx = dirs.index(current_direction)
+            current_direction = dirs[(idx + 1) % 4]
             M2.showAgent(y, x, M2.h)
 
-        elif action == 'Grab Gold':
+        elif action == 'Grab Gold' or action == 'GRAB':
             M2.showGold(y, x, M2.h)
             if count_map + 1 < len(maps):
                 M2.updateMap(maps[count_map + 1])
                 count_map += 1
 
         elif action == 'Shoot' or action == 'SHOOT_HIT' or action == 'SHOOT_MISS':
-            x_shoot, y_shoot = M2.agentShoot(path, i, direction)
+            # Calculate shoot direction based on current_direction
+            direction_to_ui = {
+                "EAST": 0,   # right
+                "NORTH": 1,  # up
+                "WEST": 2,   # left
+                "SOUTH": 3   # down
+            }
+            ui_direction = direction_to_ui.get(current_direction, 0)
+            
+            # Calculate target position based on agent's actual direction
+            dx, dy = {
+                "NORTH": (0, 1),
+                "EAST": (1, 0),
+                "SOUTH": (0, -1),
+                "WEST": (-1, 0)
+            }.get(current_direction, (1, 0))
+            
+            x_shoot, y_shoot = x + dx, y + dy
+            
+            # Show shoot animation
+            if 0 <= x_shoot < M2.w and 0 <= y_shoot < M2.h:
+                M2.showShoot(y_shoot, x_shoot, M2.h)
             
             # Check if shot hit a Wumpus
             shot_hit = False
@@ -336,15 +366,15 @@ def showAgentMove(_, path, maps_data, __, agent_point):
                             maps[map_idx][y_shoot][x_shoot].wumpus = False
                         
                         # Remove stench from adjacent cells
-                        for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
-                            adj_x, adj_y = x_shoot + dx, y_shoot + dy
+                        for dx2, dy2 in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
+                            adj_x, adj_y = x_shoot + dx2, y_shoot + dy2
                             if (0 <= adj_x < map_size and 0 <= adj_y < map_size and
                                 adj_y < len(maps[map_idx]) and adj_x < len(maps[map_idx][adj_y])):
                                 
                                 # Check if there are other Wumpuses nearby before removing stench
                                 other_wumpus_nearby = False
-                                for dx2, dy2 in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
-                                    check_x, check_y = adj_x + dx2, adj_y + dy2
+                                for dx3, dy3 in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
+                                    check_x, check_y = adj_x + dx3, adj_y + dy3
                                     if (0 <= check_x < map_size and 0 <= check_y < map_size and
                                         check_y < len(maps[map_idx]) and check_x < len(maps[map_idx][check_y])):
                                         
@@ -440,6 +470,7 @@ def showAgentMove(_, path, maps_data, __, agent_point):
                         current_step = 0
                         auto_play = False
                         direction = 1
+                        current_direction = "EAST"  # Reset agent direction
                         current_score = 0
                         count_map = 0
                         killed_wumpus_positions.clear()

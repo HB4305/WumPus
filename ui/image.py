@@ -239,19 +239,27 @@ class Map(ImageElement):
         x = path[now][0][0]
         y = path[now][0][1]
         
-        # mod = 0: right, 1: up, 2: left, 3: down
+        # Get the actual direction from the agent if available
+        # The direction parameter might not be reliable, so we calculate based on agent's actual direction
         shoot_x, shoot_y = x, y  # Default values
-        if drirection % 4 == 0:  # right
-            shoot_x, shoot_y = x + 1, y
-        elif drirection % 4 == 1:  # up
-            shoot_x, shoot_y = x, y + 1
-        elif drirection % 4 == 2:  # left
-            shoot_x, shoot_y = x - 1, y
-        elif drirection % 4 == 3:  # down
-            shoot_x, shoot_y = x, y - 1
+        
+        # Map agent directions to coordinate changes
+        # Agent uses: "NORTH" (0,1), "EAST" (1,0), "SOUTH" (0,-1), "WEST" (-1,0)
+        # But we need to handle the UI direction system properly
+        direction_map = {
+            0: (1, 0),   # EAST (right)
+            1: (0, 1),   # NORTH (up)  
+            2: (-1, 0),  # WEST (left)
+            3: (0, -1)   # SOUTH (down)
+        }
+        
+        if drirection % 4 in direction_map:
+            dx, dy = direction_map[drirection % 4]
+            shoot_x, shoot_y = x + dx, y + dy
             
-        # Make sure we're within bounds
-        if 0 <= shoot_y < self.h and 0 <= shoot_x < self.w:
+        # Make sure we're within bounds - coordinates are already in correct format
+        if 0 <= shoot_x < self.w and 0 <= shoot_y < self.h:
+            # Note: showShoot expects (row, col, height) format
             self.showShoot(shoot_y, shoot_x, self.h)
         return shoot_x, shoot_y
     
