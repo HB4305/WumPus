@@ -106,6 +106,7 @@ def showMenu():
             result = inputForm()
             if result is not None:  # Only return if we got valid input
                 return result
+            # return (3, 0.2, 2)
             ##############################################
             # If result is None, continue the menu loop
         elif choose_option == 1:  # Quit
@@ -433,9 +434,21 @@ def showAgentMove(_, path, maps_data, __, agent_point):
                 showGameBackground(screen, level=1)
                 M2.showUnknownBoard()
                 
-                # Re-reveal all previously visited cells
-                for step_x, step_y in visited_cells:
-                    M2.showPath(step_x, step_y)
+                # # Re-reveal all previously visited cells
+                # for step_x, step_y in visited_cells:
+                #     M2.showPath(step_x, step_y)
+                # Re-reveal all previously visited cells INCLUDING (0,0)
+                visited_positions = set()
+                visited_positions.add((0, 0))  
+                
+                for step_idx in range(current_step + 1):  
+                    step_x, step_y = path[step_idx][0]
+                    visited_positions.add((step_x, step_y))
+                
+                # Reveal all visited positions
+                for pos_x, pos_y in visited_positions:
+                    M2.showPath(pos_x, pos_y)
+                
                 
                 # Show current position with agent
                 M2.showAgent(y, x, M2.h)
