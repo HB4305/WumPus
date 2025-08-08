@@ -57,32 +57,30 @@ class Inference:
             for nx, ny in neighbors:
                 if not self.kb[(nx, ny)]['visited']:
                     self.kb[(nx, ny)]['possible_pit'] = False
-                    self.kb[(nx, ny)]['safe'] = True
                     self.confirmed_no_pits.add((nx, ny))
-            return
+        else:
 
         # Có breeze => ít nhất 1 ô xung quanh là pit
-        unvisited = [pos for pos in neighbors if not self.kb[pos]['visited']]
+            unvisited = [pos for pos in neighbors if not self.kb[pos]['visited']]
 
-        # Nếu chỉ có 1 ô chưa biết, đó chắc chắn là pit
-        if len(unvisited) == 1:
-            pit_pos = unvisited[0]
-            self._confirm_pit(pit_pos)
-            return
+            # Nếu chỉ có 1 ô chưa biết, đó chắc chắn là pit
+            if len(unvisited) == 1:
+                pit_pos = unvisited[0]
+                self._confirm_pit(pit_pos)
+            else:
 
-        # Tạm đánh dấu các ô chưa biết là "possible pit" (nếu chưa bị loại trừ)
-        for pos in unvisited:
-            if pos not in self.confirmed_no_pits and not self.kb[pos].get('confirmed_pit', False):
-                self.kb[pos]['possible_pit'] = True
-                self.kb[pos]['safe'] = False
+            # Tạm đánh dấu các ô chưa biết là "possible pit" (nếu chưa bị loại trừ)
+                for pos in unvisited:
+                    if pos not in self.confirmed_no_pits:
+                        self.kb[pos].update({
+                            'possible_pit': True,
+                            'safe': False
+                        })
 
-        # Gọi inference nâng cao (kiểm tra nhiều breeze để xác định pit)
-        self._advanced_pit_inference()
+            # Gọi inference nâng cao (kiểm tra nhiều breeze để xác định pit)
+            self._advanced_pit_inference()
 
     def _advanced_pit_inference(self):
-        from collections import defaultdict
-        
-        # Tạo bản đồ các ô có thể là pit và số breeze chúng giải thích
         pit_candidates = defaultdict(int)
         breeze_positions = [pos for pos, percept in self.percepts.items() if percept['breeze']]
         
@@ -94,7 +92,7 @@ class Inference:
         # Tìm ô giải thích được nhiều breeze nhất
         if pit_candidates:
             best_pit = max(pit_candidates.items(), key=lambda x: x[1])[0]
-            if pit_candidates[best_pit] == len(breeze_positions):
+            if pit_candidates[best_pit] == 4:
                 self._confirm_pit(best_pit)
 
     def _confirm_pit(self, pos):
@@ -104,11 +102,6 @@ class Inference:
             'possible_pit': True,
             'safe': False
         })
-        # Các ô lân cận không còn là possible pit (vì mỗi breeze chỉ cần 1 pit)
-        for neighbor in get_neighbors(pos, self.size):
-            if neighbor != pos and neighbor not in self.confirmed_pits:
-                self.kb[neighbor]['possible_pit'] = False
-                self.confirmed_no_pits.add(neighbor)
 
 
     def _pit_explains_all_breeze(self, pit_pos):
@@ -148,8 +141,8 @@ class Inference:
     def get_possible_pits(self):
         """Lấy danh sách các ô có thể có pit"""
         return [pos for pos, facts in self.kb.items() 
-                if facts['possible_pit'] and not facts['visited']]
-    
+                if facts.get('possible_pit', False) and not facts.get('visited', False)]
+
     # Xử lý wumpus
     def _process_wumpus_info(self, position, has_stench, neighbors):
         x, y = position
