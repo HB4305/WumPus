@@ -87,7 +87,7 @@ def main():
         action = agent.step()
         step_count += 1
 
-        # Record result
+        # Record result với điểm số hiện tại của agent
         hp = 0 if (action == "DIE" or agent.dead) else 100
         RESULT.append(((agent.x, agent.y), action, agent.point, hp, 0))
         
@@ -115,7 +115,7 @@ def main():
             break
 
     # Show agent movement
-    main_ui.showAgentMove(None, RESULT, MAPS, None)
+    main_ui.showAgentMove(None, RESULT, MAPS, None, agent.point)
 
     # Write output
     write_output(file_path="output/result.txt", agent=agent, RES=RESULT)
@@ -131,92 +131,3 @@ def main():
 if __name__ == "__main__":
     while True:
         main()
-
-# # Bảo thêm
-# from wumpus.environment import Environment
-# from wumpus.inference import Inference
-# from wumpus.agent import Agent
-# from wumpus.planner import astar_search
-# from wumpus.algorithm import heuristic
-# from ui import main_ui
-# import copy
-
-# def heuristic(pos, goal=(0, 0)):
-#     return abs(pos[0] - goal[0]) + abs(pos[1] - goal[1])
-
-# def write_output(file_path, agent, RES):
-#     with open(file_path, "w", encoding="utf-8") as f:
-#         f.write("== WUMPUS WORLD AGENT RESULT ==\n\n")
-#         f.write(f"Final score: {agent.point}\n")
-#         f.write(f"Gold collected: {'Yes' if agent.has_gold else 'No'}\n")
-#         f.write(f"Total steps: {len(RES)}\n\n")
-#         f.write("Action log:\n")
-
-#         for step, (pos, action, point) in enumerate(RES, 1):
-#             f.write(f"Step {step:>2}: Pos {pos} - Action: {action:<15} | Point: {point}\n")
-
-
-
-# def main():
-#     # Lấy thông tin cấu hình từ người dùng
-#     size, pit_prob, wumpus_count = main_ui.showMenu()
-
-#     # Tạo môi trường và agent
-#     env = Environment(size=size, k=wumpus_count, pit_prob=pit_prob)
-#     inference = Inference(size)
-#     agent = Agent(env, inference)
-
-    
-#     # Hiển thị bản đồ ban đầu
-#     main_ui.showWumpusWorld(env.grid)
-
-#     # Lưu trạng thái bản đồ theo từng bước (để truyền vào UI)
-#     MAPS = []
-#     MAPS.append(copy.deepcopy(env.grid))
-
-#     # Kết quả hành động [(pos), action, point, HP, potions]
-#     RESULT = []
-#     MAX_STEPS = 100
-#     step_count = 0
-#     hp = 100
-#     potion = 0
-
-#     while not agent.finished() and step_count < MAX_STEPS:
-#         action = agent.step()
-#         step_count += 1
-
-#         RESULT.append(((agent.x, agent.y), action, agent.point, hp, potion))
-#         MAPS.append(copy.deepcopy(env.grid))
-
-#         if action == "GRAB":
-#             return_path = astar_search(
-#                 start=(agent.x, agent.y),
-#                 goal=(0, 0),
-#                 is_safe=inference.is_safe,
-#                 size=size
-#             )
-#             for pos in return_path[1:]:
-#                 agent.x, agent.y = pos
-#                 agent.path.append(pos)
-#                 agent.take_action("Move Forward")
-#                 RESULT.append((pos, "Move Forward", agent.point, hp, potion))
-#                 MAPS.append(copy.deepcopy(env.grid))
-
-#             agent.take_action("Climb")
-#             RESULT.append(((0, 0), "Climb", agent.point, hp, potion))
-#             MAPS.append(copy.deepcopy(env.grid))
-#             break
-
-#     # Gọi giao diện để hiển thị hành trình agent
-#     main_ui.showAgentMove(None, RESULT, MAPS, None)
-#     write_output(file_path="output/result.txt", agent=agent, RES=RESULT)
-
-        
-
-
-# if __name__ == "__main__":
-#     while True:
-#         main()
-# if __name__ == "__main__":
-#     while True:
-#         main()

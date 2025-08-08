@@ -114,35 +114,7 @@ def showMenu():
 
         pygame.display.update()
 
-def calculateScore(action, current_score=0, has_gold=False, died=False):
-    """
-    Calculate score based on Wumpus World scoring system:
-    - Grab gold: +10
-    - Move forward: -1
-    - Turn left/right: -1
-    - Shoot: -10
-    - Die (fall in pit or eaten by wumpus): -1000
-    - Climb out (with gold): +1000
-    - Climb out (without gold): 0
-    """
-    if died:
-        return -1000
-    
-    if action == 'Move Forward':
-        return current_score - 1
-    elif action in ['Turn Left', 'Turn Right']:
-        return current_score - 1
-    elif action == 'Grab Gold':
-        return current_score + 10
-    elif action == 'Shoot':
-        return current_score - 10
-    elif action == 'Climb':
-        if has_gold:
-            return current_score + 1000
-        else:
-            return current_score + 0
-    else:
-        return current_score
+
 
 def showWumpusWorld(map_data):
     M1 = Map(screen, map_data)
@@ -157,12 +129,13 @@ def showWumpusWorld(map_data):
     pygame.display.update()
     pygame.time.wait(2000)
 
-def showAgentMove(_, path, maps_data, __):
+def showAgentMove(_, path, maps_data, __, agent_point):
     I2 = Info(screen, level=1)
     I2.showNoti(1)
     isMoving = True
     direction = 1
-    current_score = 0  # Start with 0 score
+    # Bắt đầu với điểm số = 0 thay vì điểm cuối cùng
+    current_score = 0
     has_gold = False
 
     time_wait_1 = 50
@@ -223,6 +196,10 @@ def showAgentMove(_, path, maps_data, __):
                 x, y = path[i][0]  # x is column, y is row
                 action = path[i][1]
                 
+                # Cập nhật điểm số từ dữ liệu path
+                if len(path[i]) > 2:
+                    current_score = path[i][2]  # Lấy điểm từ path data
+                
                 # Calculate score based on action
                 if action == 'Grab Gold':
                     has_gold = True
@@ -232,7 +209,6 @@ def showAgentMove(_, path, maps_data, __):
                 if len(path[i]) > 3:
                     died = path[i][3] == 0
                 
-                current_score = calculateScore(action, current_score, has_gold, died)
 
                 # Show the path and agent at current position using x,y
                 M2.showPath(x, y)
@@ -306,7 +282,7 @@ def showAgentMove(_, path, maps_data, __):
                         if 0 <= kx < map_size and 0 <= ky < map_size:
                             M2.showEmpty(ky, kx, M2.h)
 
-                # Show only score
+                # Cập nhật điểm số trên UI với điểm hiện tại
                 I2.showLeftBar(map_size, score=current_score)
                 pygame.display.flip()
                 pygame.time.wait(time_wait_1)
@@ -314,7 +290,6 @@ def showAgentMove(_, path, maps_data, __):
             # Final score calculation
             final_action = path[-1][1]
             final_died = len(path[-1]) > 3 and path[-1][3] == 0
-            final_score = calculateScore(final_action, current_score, has_gold, final_died)
 
             if final_died:
                 I2.showNoti(3)  # Death notification
@@ -328,14 +303,14 @@ def showAgentMove(_, path, maps_data, __):
                 M2.showPath(final_x, final_y)
                 M2.showDie(final_y, final_x, M2.h)
 
-            I2.showLeftBar(map_size, score=final_score)
+            I2.showLeftBar(map_size, score=current_score)
             pygame.display.flip()
             isMoving = False
 
         elif len(path) == 0:
             isMoving = False
             I2.showNoti(4)
-            I2.showLeftBar(4, score=0)  # Default to 4x4 if no path
+            I2.showLeftBar(4, score=current_score) # Default to 4x4 if no path
             pygame.display.flip()
 
         else:

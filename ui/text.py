@@ -64,8 +64,7 @@ class Info(Text_Display):
         area = (self.left_margin-20, 0, WINDOW_WIDTH-(self.left_margin-20), SHOW_NOTI_HEIGHT)
         showGameBackground(self.screen, area, self.level_background)
         self.showMapInfo(choose_map_result)
-        # self.showScore(score)
-        self.showScore()
+        self.showScore(score)
     
     def showNoti(self, noti):
         area = (BOARD_APPEEAR_WIDTH, SHOW_NOTI_HEIGHT, WINDOW_WIDTH-BOARD_APPEEAR_WIDTH, WINDOW_HEIGHT - SHOW_NOTI_HEIGHT)

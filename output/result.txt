@@ -1,9 +1,17 @@
 == WUMPUS WORLD AGENT RESULT ==
 
-Final score: 1010
+Final score: 1002
 Gold collected: Yes
-Total steps: 2
+Total steps: 10
 
 Action log:
-Step  1: Pos (0, 0) - Action: GRAB            | Point: 10
-Step  2: Pos (0, 0) - Action: CLIMB           | Point: 1010
+Step  1: Pos (1, 0) - Action: MOVE            | Point: -1
+Step  2: Pos (2, 0) - Action: MOVE            | Point: -2
+Step  3: Pos (2, 1) - Action: MOVE            | Point: -3
+Step  4: Pos (2, 2) - Action: MOVE            | Point: -4
+Step  5: Pos (1, 2) - Action: MOVE            | Point: -5
+Step  6: Pos (1, 2) - Action: GRAB            | Point: 5
+Step  7: Pos (1, 1) - Action: MOVE            | Point: 4
+Step  8: Pos (0, 1) - Action: MOVE            | Point: 3
+Step  9: Pos (0, 0) - Action: MOVE            | Point: 2
+Step 10: Pos (0, 0) - Action: CLIMB           | Point: 1002
