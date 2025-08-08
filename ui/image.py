@@ -42,15 +42,24 @@ class ImageElement:
         whiff_img (image): The image of the whiff surrounding the poisonous gas.
         healing_potion_img (image): The image of the healing potion.
         glow_img (image): The image of the glow surrounding the healing potion.
+        
+        # Faded versions for unknown cells
+        faded_wumpus_img (image): Faded version of Wumpus image.
+        faded_pit_img (image): Faded version of pit image.
+        faded_stench_img (image): Faded version of stench image.
+        faded_breeze_img (image): Faded version of breeze image.
     """
     def __init__(self, screen, cell_side=60):
         self.screen = screen
         self.cell_side = cell_side
         self.cell_size = (self.cell_side, self.cell_side)
+        
+        # Load and scale normal images
         self.empty_img = pygame.image.load('ui/assets/empty.png')
         self.empty_img = pygame.transform.scale(self.empty_img, self.cell_size)
         self.unknown_img = pygame.image.load('ui/assets/unknown.png')
         self.unknown_img = pygame.transform.scale(self.unknown_img, self.cell_size)
+        
         #https://www.clipartmax.com/download/m2i8A0H7b1Z5d3Z5_miner-miner-png/
         self.agent_img = pygame.image.load('ui/assets/agent.png')
         self.agent_img = pygame.transform.scale(self.agent_img, self.cell_size)
@@ -64,7 +73,6 @@ class ImageElement:
         self.gold_img = pygame.image.load('ui/assets/gold.png')
         self.gold_img = pygame.transform.scale(self.gold_img, self.cell_size)
         
-        #https://yt3.googleusercontent.com/s_38Cu2ryXXDcK9fbfc9O-C23DZV1Lo8VgvDJbG_kRB7WctOofRD1gt-LNMGlJnx13-BaetK1w=s900-c-k-c0x00ffffff-no-rj
         self.wumpus_img = pygame.image.load('ui/assets/wumpus.png')
         self.wumpus_img = pygame.transform.scale(self.wumpus_img, self.cell_size)
         self.stench_img = pygame.image.load('ui/assets/stench.png')
@@ -72,7 +80,6 @@ class ImageElement:
         self.scream_img = pygame.image.load('ui/assets/scream.png')
         self.scream_img = pygame.transform.scale(self.scream_img, self.cell_size)
         
-        #https://www.pikpng.com/pngvi/mTJTmi_ground-clipart-crack-hole-in-ground-drawing-png-download/
         self.pit_img = pygame.image.load('ui/assets/pit.png')
         self.pit_img = pygame.transform.scale(self.pit_img, self.cell_size)
         self.breeze_img = pygame.image.load('ui/assets/breeze.png')
@@ -83,13 +90,64 @@ class ImageElement:
         self.whiff_img = self.breeze_img       # Use breeze image as placeholder
         self.healing_potion_img = self.gold_img # Use gold image as placeholder
         self.glow_img = self.stench_img        # Use stench image as placeholder
-
+        
+        # Create faded versions for unknown cells (30% opacity)
+        self.faded_wumpus_img = self.wumpus_img.copy()
+        self.faded_wumpus_img.set_alpha(80)  # ~30% opacity
+        
+        self.faded_pit_img = self.pit_img.copy()
+        self.faded_pit_img.set_alpha(80)
+        
+        self.faded_stench_img = self.stench_img.copy()
+        self.faded_stench_img.set_alpha(80)
+        
+        self.faded_breeze_img = self.breeze_img.copy()
+        self.faded_breeze_img.set_alpha(80)
     
     # Show images
     def showEmpty(self, i, j, h):
         self.screen.blit(self.empty_img, (BOARD_APPEEAR_WIDTH + j*self.cell_side, BOARD_APPEEAR_HEIGHT + (h - 1 - i)*self.cell_side))
+    
     def showUnknown(self, i, j, h):
         self.screen.blit(self.unknown_img, (BOARD_APPEEAR_WIDTH + j*self.cell_side, BOARD_APPEEAR_HEIGHT + (h - 1 - i)*self.cell_side))
+    
+    def showUnknownWithOverlay(self, i, j, h, cell_data):
+        """Show unknown cell with faded overlay of actual content"""
+        # First show the unknown background
+        self.showUnknown(i, j, h)
+        
+        # Then overlay faded content
+        if isinstance(cell_data, list):
+            element = cell_data[0] if len(cell_data) > 0 else ''
+            stench = cell_data[1] if len(cell_data) > 1 else False
+            breeze = cell_data[2] if len(cell_data) > 2 else False
+        else:
+            # Handle Cell objects
+            element = ''
+            if hasattr(cell_data, 'wumpus') and cell_data.wumpus:
+                element += 'W'
+            if hasattr(cell_data, 'pit') and cell_data.pit:
+                element += 'P'
+            if hasattr(cell_data, 'gold') and cell_data.gold:
+                element += 'G'
+            if element == '':
+                element = '-'
+            stench = getattr(cell_data, 'stench', False)
+            breeze = getattr(cell_data, 'breeze', False)
+        
+        # Show faded main elements
+        if 'W' in element:
+            self.screen.blit(self.faded_wumpus_img, (BOARD_APPEEAR_WIDTH + j*self.cell_side, BOARD_APPEEAR_HEIGHT + (h - 1 - i)*self.cell_side))
+        elif 'P' in element:
+            self.screen.blit(self.faded_pit_img, (BOARD_APPEEAR_WIDTH + j*self.cell_side, BOARD_APPEEAR_HEIGHT + (h - 1 - i)*self.cell_side))
+        
+        # Show faded effects
+        if stench and 'W' not in element:
+            self.screen.blit(self.faded_stench_img, (BOARD_APPEEAR_WIDTH + j*self.cell_side, BOARD_APPEEAR_HEIGHT + (h - 1 - i)*self.cell_side))
+        elif breeze and 'P' not in element:
+            self.screen.blit(self.faded_breeze_img, (BOARD_APPEEAR_WIDTH + j*self.cell_side, BOARD_APPEEAR_HEIGHT + (h - 1 - i)*self.cell_side))
+    
+    # Show images
     def showAgent(self, i, j, h):
         self.screen.blit(self.agent_img, (BOARD_APPEEAR_WIDTH + j*self.cell_side, BOARD_APPEEAR_HEIGHT + (h - 1 - i)*self.cell_side))
     def showDie(self, i, j, h):
@@ -104,6 +162,9 @@ class ImageElement:
     def showStench(self, i, j, h):
         self.screen.blit(self.stench_img, (BOARD_APPEEAR_WIDTH + j*self.cell_side, BOARD_APPEEAR_HEIGHT + (h - 1 - i)*self.cell_side))
     def showScream(self, i, j, h):
+        # First show the cell content (empty or whatever is there)
+        self.showEmpty(i, j, h)
+        # Then overlay the scream image on top
         self.screen.blit(self.scream_img, (BOARD_APPEEAR_WIDTH + j*self.cell_side, BOARD_APPEEAR_HEIGHT + (h - 1 - i)*self.cell_side))
     
     def showPoisonousGas(self, i, j, h):
@@ -194,12 +255,13 @@ class Map(ImageElement):
             self.showShoot(shoot_y, shoot_x, self.h)
         return shoot_x, shoot_y
     
-    def showUnknownBoard(self): # Show game map with unvisitted cells
-        y = 0
-        x = 0
-        for y in range (0, self.h):
-            for x in range (0, self.w):
-                self.showUnknown(y, x, self.h)
+    def showUnknownBoard(self): # Show game map with unvisitted cells with faded overlays
+        for y in range(0, self.h):
+            for x in range(0, self.w):
+                if y < len(self.map_data) and x < len(self.map_data[0]):
+                    self.showUnknownWithOverlay(y, x, self.h, self.map_data[y][x])
+                else:
+                    self.showUnknown(y, x, self.h)
     
     def showKnownBoard(self): # Show game map with visitted cells
         y = 0
@@ -249,7 +311,7 @@ class Map(ImageElement):
         has_main_element = ('W' in element or 'P' in element or 'G' in element or 
                            'P_G' in element or 'H_P' in element)
         
-        # Show main elements first (highest priority)
+        # Show main elements first (highest priority) - but don't show dead Wumpus
         if 'W' in element:
             self.showWumpus(y, x, self.h)
         elif 'P' in element and 'P_G' not in element:
@@ -272,9 +334,8 @@ class Map(ImageElement):
             elif whiff:
                 self.showWhiff(y, x, self.h)
         
-        # Always show scream as overlay when it occurs
-        if scream:
-            self.showScream(y, x, self.h)
+        # Show scream as temporary overlay (but don't persist it)
+        # Scream should be handled separately as a temporary effect
         
         # Agent is always shown on top if present
         if 'A' in element:
