@@ -65,17 +65,3 @@ class Info(Text_Display):
         showGameBackground(self.screen, area, self.level_background)
         self.showMapInfo(choose_map_result)
         self.showScore(score)
-    
-    def showNoti(self, noti):
-        area = (BOARD_APPEEAR_WIDTH, SHOW_NOTI_HEIGHT, WINDOW_WIDTH-BOARD_APPEEAR_WIDTH, WINDOW_HEIGHT - SHOW_NOTI_HEIGHT)
-        showGameBackground(self.screen, area, self.level_background)
-        if noti == 0:
-            self.write_text_content(f"Agent will start moving in 1 second...", BOARD_APPEEAR_WIDTH, SHOW_NOTI_HEIGHT, text_color=DARK_RED_COLOR)
-        elif noti == 1:
-            self.write_text_content(f"Agent is moving. Press Enter to return to menu.", BOARD_APPEEAR_WIDTH, SHOW_NOTI_HEIGHT, text_color=DARK_RED_COLOR)
-        elif noti == 2:
-            self.write_text_content(f"Agent exits the cave successfully. Press Enter to return to menu.", BOARD_APPEEAR_WIDTH, SHOW_NOTI_HEIGHT, font_size=FONT_MEDIUM_SMALL, text_color=DARK_RED_COLOR)
-        elif noti == 3:
-            self.write_text_content(f"End game. Press Enter to return to menu.", BOARD_APPEEAR_WIDTH, SHOW_NOTI_HEIGHT, text_color=DARK_RED_COLOR)
-        elif noti == 4:
-            self.write_text_content(f"Agent Wins. Press Enter to return to menu.", BOARD_APPEEAR_WIDTH, SHOW_NOTI_HEIGHT, text_color=DARK_RED_COLOR)

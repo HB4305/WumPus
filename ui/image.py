@@ -150,13 +150,21 @@ class Map(ImageElement):
         self.map_data = copy.deepcopy(map_data)
         self.h = len(map_data)
         self.w = len(map_data[0])
-        cell_side = 65
-        if max(self.h, self.w) <= 5:
-            cell_side = 120
-        elif max(self.h, self.w) <= 10:
-            cell_side = 65
-        else:
-            cell_side = 20
+        
+        # Calculate cell size based on available space
+        # Account for right sidebar (approximately 300px for buttons and info)
+        right_sidebar_width = 300
+        available_width = WINDOW_WIDTH - BOARD_APPEEAR_WIDTH - right_sidebar_width - 50  # Extra margin
+        available_height = WINDOW_HEIGHT - BOARD_APPEEAR_HEIGHT - 50  # Leave margin for bottom
+        
+        # Calculate maximum cell size that fits
+        max_cell_width = available_width // self.w if self.w > 0 else available_width
+        max_cell_height = available_height // self.h if self.h > 0 else available_height
+        cell_side = min(max_cell_width, max_cell_height)
+        
+        # Set minimum and maximum cell sizes
+        cell_side = max(12, min(120, cell_side))  # Min 12px, Max 120px
+        
         super().__init__(screen, cell_side)
     
     def updateMap(self, map_data):
@@ -233,32 +241,41 @@ class Map(ImageElement):
                 
             stench = getattr(cell, 'stench', False)
             breeze = getattr(cell, 'breeze', False)
-            whiff = getattr(cell, 'whiff', False)  # Added attribute check
+            whiff = getattr(cell, 'whiff', False)
             glow = getattr(cell, 'glitter', False)
-            scream = getattr(cell, 'scream', False)  # Added attribute check
+            scream = getattr(cell, 'scream', False)
         
-        # Show elements - use y,x for drawing as per your original methods
-        if 'A' in element:
-            self.showAgent(y, x, self.h)
-        if 'G' in element:
-            self.showGold(y, x, self.h)
+        # Check if cell has main elements (priority items)
+        has_main_element = ('W' in element or 'P' in element or 'G' in element or 
+                           'P_G' in element or 'H_P' in element)
+        
+        # Show main elements first (highest priority)
         if 'W' in element:
             self.showWumpus(y, x, self.h)
-        if 'P' in element and 'P_G' not in element:
+        elif 'P' in element and 'P_G' not in element:
             self.showPit(y, x, self.h)
-        if 'P_G' in element:
+        elif 'P_G' in element:
             self.showPoisonousGas(y, x, self.h)
-        if 'H_P' in element:
+        elif 'G' in element:
+            self.showGold(y, x, self.h)
+        elif 'H_P' in element:
             self.showHealingPotion(y, x, self.h)
-
-        # Show effects
-        if stench:
-            self.showStench(y, x, self.h)
-        if breeze:
-            self.showBreeze(y, x, self.h)
-        if whiff:
-            self.showWhiff(y, x, self.h)
-        if glow:
-            self.showGlow(y, x, self.h)
+        else:
+            # Only show effects if there are no main elements
+            # Show effects with proper priority
+            if glow:  # Glitter has highest priority among effects
+                self.showGlow(y, x, self.h)
+            elif stench:
+                self.showStench(y, x, self.h)
+            elif breeze:
+                self.showBreeze(y, x, self.h)
+            elif whiff:
+                self.showWhiff(y, x, self.h)
+        
+        # Always show scream as overlay when it occurs
         if scream:
             self.showScream(y, x, self.h)
+        
+        # Agent is always shown on top if present
+        if 'A' in element:
+            self.showAgent(y, x, self.h)

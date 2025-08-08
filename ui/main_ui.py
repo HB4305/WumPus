@@ -125,24 +125,34 @@ def showWumpusWorld(map_data):
     map_size = len(map_data) if map_data else 4
     # Start with score = 0
     I1.showLeftBar(map_size, score=0)
-    I1.showNoti(0)
     pygame.display.update()
-    pygame.time.wait(2000)
+    # Removed pygame.time.wait(2000)
 
 def showAgentMove(_, path, maps_data, __, agent_point):
     I2 = Info(screen, level=1)
-    I2.showNoti(1)
-    isMoving = True
     direction = 1
-    # Bắt đầu với điểm số = 0 thay vì điểm cuối cùng
     current_score = 0
     has_gold = False
+    current_step = 0
+    auto_play = False
+    auto_play_timer = 0
+    selected_button = 0  # 0: Auto Play, 1: Step, 2: Reset, 3: Exit
 
-    time_wait_1 = 50
-    time_wait_2 = 100
-    time_wait_3 = 300
-    time_wait_4 = 1200
-
+    # Button setup - positioned below the left bar area
+    button_font = pygame.font.Font(FONT_TYPE, FONT_MEDIUM_SMALL)
+    button_width = 120
+    button_height = 40
+    button_margin = 10
+    
+    # Position buttons below the showLeftBar area (around y=200)
+    base_x = 870  # Align with left bar content
+    base_y = 200  # Start below the score display
+    
+    auto_button_rect = pygame.Rect(base_x, base_y, button_width, button_height)
+    step_button_rect = pygame.Rect(base_x, base_y + button_height + button_margin, button_width, button_height)
+    reset_button_rect = pygame.Rect(base_x, base_y + (button_height + button_margin) * 2, button_width, button_height)
+    exit_button_rect = pygame.Rect(base_x, base_y + (button_height + button_margin) * 3, button_width, button_height)
+    
     # Convert maps_data to expected format
     maps = []
     for env_grid in maps_data:
@@ -151,172 +161,214 @@ def showAgentMove(_, path, maps_data, __, agent_point):
             map_row = []
             for cell in row:
                 # Create proper cell data with the right format
+                has_wumpus = getattr(cell, 'wumpus', False)
+                has_pit = getattr(cell, 'pit', False) 
+                has_gold = getattr(cell, 'gold', False)
+                
+                element = ''
+                if has_wumpus:
+                    element += 'W'
+                if has_pit:
+                    element += 'P'
+                if has_gold:
+                    element += 'G'
+                if element == '':
+                    element = '-'
+                
+                # Only show stench/breeze as effects if the cell doesn't have main elements
+                stench = getattr(cell, 'stench', False) and not (has_wumpus or has_pit or has_gold)
+                breeze = getattr(cell, 'breeze', False) and not (has_wumpus or has_pit or has_gold)
+                
                 cell_data = [
-                    ('W' if getattr(cell, 'wumpus', False) else '') + 
-                    ('P' if getattr(cell, 'pit', False) else '') + 
-                    ('G' if getattr(cell, 'gold', False) else ''),
-                    getattr(cell, 'stench', False),
-                    getattr(cell, 'breeze', False),
+                    element,
+                    stench,
+                    breeze,
                     False,  # whiff (not used in basic Wumpus)
                     getattr(cell, 'glitter', False),
                     False  # scream
                 ]
-                # If cell is empty, mark it as '-'
-                if cell_data[0] == '':
-                    cell_data[0] = '-'
                 map_row.append(cell_data)
             map_layer.append(map_row)
         maps.append(map_layer)
 
     count_map = 0 if len(maps) > 0 else 1
     M2 = Map(screen, maps[0] if maps else [])
-    
-    # Calculate map size
     map_size = len(maps[0]) if maps and len(maps[0]) > 0 else 4
-    
-    # Track killed wumpus positions to ensure they remain invisible
     killed_wumpus_positions = set()
 
-    while True:
-        if isMoving:
-            x_shoot, y_shoot = -1, -1
-            for i in range(len(path)):
-                for event in pygame.event.get():
-                    if event.type == QUIT:
-                        pygame.quit()
-                        sys.exit()
-                    if event.type == pygame.KEYDOWN and (event.key == pygame.K_RETURN or event.key == K_KP_ENTER):
-                        return
+    # Draw control buttons
+    def draw_buttons():
+        # Auto Play button
+        auto_color = WHITE_COLOR if selected_button == 0 else DARK_RED_COLOR
+        pygame.draw.rect(screen, auto_color, auto_button_rect, 2)
+        auto_text = button_font.render("Play", True, auto_color)
+        text_rect = auto_text.get_rect(center=auto_button_rect.center)
+        screen.blit(auto_text, text_rect)
 
-                if i > 0:
-                    # Get coordinates consistently as (x,y)
-                    prev_x, prev_y = path[i - 1][0]
-                    M2.showPath(prev_x, prev_y)
+        # Step button
+        step_color = WHITE_COLOR if selected_button == 1 else DARK_RED_COLOR
+        pygame.draw.rect(screen, step_color, step_button_rect, 2)
+        step_text = button_font.render("Step", True, step_color)
+        text_rect = step_text.get_rect(center=step_button_rect.center)
+        screen.blit(step_text, text_rect)
 
-                x, y = path[i][0]  # x is column, y is row
-                action = path[i][1]
+        # Reset button
+        reset_color = WHITE_COLOR if selected_button == 2 else DARK_RED_COLOR
+        pygame.draw.rect(screen, reset_color, reset_button_rect, 2)
+        reset_text = button_font.render("Reset", True, reset_color)
+        text_rect = reset_text.get_rect(center=reset_button_rect.center)
+        screen.blit(reset_text, text_rect)
+
+        # Exit button
+        exit_color = WHITE_COLOR if selected_button == 3 else DARK_RED_COLOR
+        pygame.draw.rect(screen, exit_color, exit_button_rect, 2)
+        exit_text = button_font.render("Exit", True, exit_color)
+        text_rect = exit_text.get_rect(center=exit_button_rect.center)
+        screen.blit(exit_text, text_rect)
                 
-                # Cập nhật điểm số từ dữ liệu path
-                if len(path[i]) > 2:
-                    current_score = path[i][2]  # Lấy điểm từ path data
+        # Show current step info above buttons
+        step_info = button_font.render(f"Step: {current_step}/{len(path)}", True, DARK_RED_COLOR)
+        screen.blit(step_info, (base_x, base_y - 30))
+
+    def execute_step():
+        nonlocal current_step, direction, current_score, count_map, killed_wumpus_positions
+        
+        if current_step >= len(path):
+            return False
+            
+        i = current_step
+        
+        if i > 0:
+            prev_x, prev_y = path[i - 1][0]
+            M2.showPath(prev_x, prev_y)
+
+        x, y = path[i][0]
+        action = path[i][1]
+        
+        if len(path[i]) > 2:
+            current_score = path[i][2]
+        
+        if action == 'Grab Gold':
+            has_gold = True
+        
+        died = False
+        if len(path[i]) > 3:
+            died = path[i][3] == 0
+
+        M2.showPath(x, y)
+        M2.showAgent(y, x, M2.h)
+
+        if action == 'Turn Left':
+            direction = M2.turnLeft(direction)
+            M2.showAgent(y, x, M2.h)
+
+        elif action == 'Turn Right':
+            direction = M2.turnRight(direction)
+            M2.showAgent(y, x, M2.h)
+
+        elif action == 'Grab Gold':
+            M2.showGold(y, x, M2.h)
+            if count_map + 1 < len(maps):
+                M2.updateMap(maps[count_map + 1])
+                count_map += 1
+
+        elif action == 'Shoot' or action == 'SHOOT_HIT' or action == 'SHOOT_MISS':
+            x_shoot, y_shoot = M2.agentShoot(path, i, direction)
+            
+            if action == 'SHOOT_HIT' or (len(maps) > count_map and y < len(maps[count_map]) and 
+                     x < len(maps[count_map][y]) and maps[count_map][y][x][5]):
+                M2.showScream(y_shoot, x_shoot, M2.h)
+                killed_wumpus_positions.add((x_shoot, y_shoot))
                 
-                # Calculate score based on action
-                if action == 'Grab Gold':
-                    has_gold = True
-                
-                # Check if agent died
-                died = False
-                if len(path[i]) > 3:
-                    died = path[i][3] == 0
-                
-
-                # Show the path and agent at current position using x,y
-                M2.showPath(x, y)
-                M2.showAgent(y, x, M2.h)  # Note: showAgent uses y,x internally
-
-                if action == 'Turn Left':
-                    pygame.display.flip()
-                    pygame.time.wait(time_wait_1)
-                    direction = M2.turnLeft(direction)
-                    M2.showAgent(y, x, M2.h)
-                    pygame.display.flip()
-                    pygame.time.wait(time_wait_2)
-
-                elif action == 'Turn Right':
-                    pygame.display.flip()
-                    pygame.time.wait(time_wait_1)
-                    direction = M2.turnRight(direction)
-                    M2.showAgent(y, x, M2.h)
-                    pygame.display.flip()
-                    pygame.time.wait(time_wait_2)
-
-                elif action == 'Grab Gold':
-                    M2.showGold(y, x, M2.h)
-                    pygame.display.flip()
-                    pygame.time.wait(time_wait_4)
-                    if count_map + 1 < len(maps):
-                        M2.updateMap(maps[count_map + 1])
-                        count_map += 1
-
-                # Bảo thêm
-                elif action == 'Shoot' or action == 'SHOOT_HIT' or action == 'SHOOT_MISS':
-                    x_shoot, y_shoot = M2.agentShoot(path, i, direction)
-                    pygame.display.flip()
-                    pygame.time.wait(time_wait_3)
-                    
-                    # If it was a successful shot (SHOOT_HIT)
-                    if action == 'SHOOT_HIT' or (len(maps) > count_map and y < len(maps[count_map]) and 
-                             x < len(maps[count_map][y]) and maps[count_map][y][x][5]):
-                        # Show scream animation
-                        M2.showScream(y_shoot, x_shoot, M2.h)
-                        pygame.display.flip()
-                        pygame.time.wait(time_wait_4)
-                        
-                        # Mark this wumpus as killed
-                        killed_wumpus_positions.add((x_shoot, y_shoot))
-                        
-                        # Update map to show wumpus is gone
-                        if count_map + 1 < len(maps):
-                            # Ensure wumpus is removed from all future maps
-                            for future_map_idx in range(count_map + 1, len(maps)):
-                                if y_shoot < len(maps[future_map_idx]) and x_shoot < len(maps[future_map_idx][y_shoot]):
-                                    # Remove wumpus from cell content (first element)
-                                    cell_content = maps[future_map_idx][y_shoot][x_shoot][0]
-                                    maps[future_map_idx][y_shoot][x_shoot][0] = cell_content.replace('W', '')
-                                    if maps[future_map_idx][y_shoot][x_shoot][0] == '':
-                                        maps[future_map_idx][y_shoot][x_shoot][0] = '-'
-                                    
-                                    # Remove stench from neighboring cells
-                                    for nx, ny in [(x_shoot+1, y_shoot), (x_shoot-1, y_shoot), 
-                                                  (x_shoot, y_shoot+1), (x_shoot, y_shoot-1)]:
-                                        if (0 <= nx < map_size and 0 <= ny < map_size and
-                                            ny < len(maps[future_map_idx]) and nx < len(maps[future_map_idx][ny])):
-                                            maps[future_map_idx][ny][nx][1] = False  # Set stench to False
+                if count_map + 1 < len(maps):
+                    for future_map_idx in range(count_map + 1, len(maps)):
+                        if y_shoot < len(maps[future_map_idx]) and x_shoot < len(maps[future_map_idx][y_shoot]):
+                            cell_content = maps[future_map_idx][y_shoot][x_shoot][0]
+                            maps[future_map_idx][y_shoot][x_shoot][0] = cell_content.replace('W', '')
+                            if maps[future_map_idx][y_shoot][x_shoot][0] == '':
+                                maps[future_map_idx][y_shoot][x_shoot][0] = '-'
                             
-                            # Update the current display map
-                            M2.updateMap(maps[count_map + 1])
-                            count_map += 1
+                            for nx, ny in [(x_shoot+1, y_shoot), (x_shoot-1, y_shoot), 
+                                          (x_shoot, y_shoot+1), (x_shoot, y_shoot-1)]:
+                                if (0 <= nx < map_size and 0 <= ny < map_size and
+                                    ny < len(maps[future_map_idx]) and nx < len(maps[future_map_idx][ny])):
+                                    maps[future_map_idx][ny][nx][1] = False
                     
-                    # Ensure no wumpus is shown at killed positions
-                    for kx, ky in killed_wumpus_positions:
-                        if 0 <= kx < map_size and 0 <= ky < map_size:
-                            M2.showEmpty(ky, kx, M2.h)
+                    M2.updateMap(maps[count_map + 1])
+                    count_map += 1
+            
+            for kx, ky in killed_wumpus_positions:
+                if 0 <= kx < map_size and 0 <= ky < map_size:
+                    M2.showEmpty(ky, kx, M2.h)
 
-                # Cập nhật điểm số trên UI với điểm hiện tại
-                I2.showLeftBar(map_size, score=current_score)
-                pygame.display.flip()
-                pygame.time.wait(time_wait_1)
-
-            # Final score calculation
+        I2.showLeftBar(map_size, score=current_score)
+        current_step += 1
+        
+        # Handle final step
+        if current_step >= len(path):
             final_action = path[-1][1]
             final_died = len(path[-1]) > 3 and path[-1][3] == 0
+            final_x, final_y = path[-1][0]
 
             if final_died:
-                I2.showNoti(3)  # Death notification
-            elif final_action == 'Climb':
-                I2.showNoti(2)  # Success notification
-                final_x, final_y = path[-1][0]
-                M2.showPath(final_x, final_y)
-            else:
-                I2.showNoti(4)  # Other ending
-                final_x, final_y = path[-1][0]
+                # Agent died from Wumpus or Pit
                 M2.showPath(final_x, final_y)
                 M2.showDie(final_y, final_x, M2.h)
+            elif final_action == 'Climb' and final_x == 0 and final_y == 0:
+                # Agent successfully climbed out at (0,0) with gold
+                M2.showPath(final_x, final_y)
+            else:
+                # Agent ran out of moves or couldn't complete the mission
+                M2.showPath(final_x, final_y)
+        
+        return True
 
-            I2.showLeftBar(map_size, score=current_score)
-            pygame.display.flip()
-            isMoving = False
+    # Main game loop
+    clock = pygame.time.Clock()
+    
+    while True:
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN or event.key == K_KP_ENTER:
+                    if selected_button == 0:  # Auto Play button
+                        auto_play = not auto_play
+                        auto_play_timer = 0
+                    elif selected_button == 1:  # Step button
+                        if not auto_play and current_step < len(path):
+                            execute_step()
+                    elif selected_button == 2:  # Reset button
+                        # Reset simulation
+                        current_step = 0
+                        auto_play = False
+                        direction = 1
+                        current_score = 0
+                        count_map = 0
+                        killed_wumpus_positions.clear()
+                        # Reset map display
+                        showGameBackground(screen, level=1)
+                        M2 = Map(screen, maps[0] if maps else [])
+                        M2.showUnknownBoard()
+                        I2.showLeftBar(map_size, score=0)
+                    elif selected_button == 3:  # Exit button
+                        return  # Return to menu
+                elif event.key == pygame.K_UP:
+                    selected_button = (selected_button - 1) % 4
+                elif event.key == pygame.K_DOWN:
+                    selected_button = (selected_button + 1) % 4
 
-        elif len(path) == 0:
-            isMoving = False
-            I2.showNoti(4)
-            I2.showLeftBar(4, score=current_score) # Default to 4x4 if no path
-            pygame.display.flip()
+        # Auto play logic
+        if auto_play and current_step < len(path):
+            auto_play_timer += clock.get_time()
+            if auto_play_timer >= 500:  # 500ms between steps
+                execute_step()
+                auto_play_timer = 0
+                if current_step >= len(path):
+                    auto_play = False
 
-        else:
-            for event in pygame.event.get():
-                if event.type == QUIT:
-                    pygame.quit()
-                    sys.exit()
-                if event.type == pygame.KEYDOWN and (event.key == pygame.K_RETURN or event.key == K_KP_ENTER):
-                    return
+        # Draw everything
+        draw_buttons()
+        pygame.display.flip()
+        clock.tick(60)
