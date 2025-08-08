@@ -246,7 +246,7 @@ class Agent:
         # ---- MOVE TO SAFE NEIGHBOR ----
         safe_neighbors = self.get_truly_safe_neighbors()
         if safe_neighbors:
-            best_neighbor = self.choose_best_neighbor(safe_neighbors)
+            best_neighbor = self.choose_best_neighbor(safe_neighbors) # ưu tiên ô gần trung tâm
             target_dir = self.get_direction_to(best_neighbor)
             if self.direction != target_dir:
                 return self.turn_towards(target_dir)  # xoay trước khi đi
@@ -297,10 +297,10 @@ class Agent:
         if not (0 <= next_x < self.env.size and 0 <= next_y < self.env.size):
             return False
             
-        # Kiểm tra trực tiếp từ environment
-        next_cell = self.env.grid[next_y][next_x]
-        if next_cell.pit or next_cell.wumpus:
-            return False
+        # # Kiểm tra trực tiếp từ environment
+        # next_cell = self.env.grid[next_y][next_x]
+        # if next_cell.pit or next_cell.wumpus:
+        #     return False
             
         # Kiểm tra từ inference
         kb_info = self.inference.kb.get((next_x, next_y), {})
@@ -308,12 +308,26 @@ class Agent:
         # Không an toàn nếu:
         # - Là confirmed pit
         # - Hoặc chưa visited và có possible pit
+        # if (next_x, next_y) in self.inference.confirmed_pits:
+        #     return False
+            
+        # if not kb_info.get('visited', False) and kb_info.get('possible_pit', False):
+        #     return False
+            
+        # return True
+        # Nếu là confirmed pit hoặc confirmed wumpus thì chắc chắn không an toàn
         if (next_x, next_y) in self.inference.confirmed_pits:
             return False
-            
-        if not kb_info.get('visited', False) and kb_info.get('possible_pit', False):
+        if (next_x, next_y) in self.inference.confirmed_wumpus:
             return False
-            
+        
+        # Nếu chưa thăm và có khả năng là pit hoặc wumpus thì coi như không an toàn
+        if not kb_info.get('visited', False):
+            if kb_info.get('possible_pit', False):
+                return False
+            if kb_info.get('possible_wumpus', False):
+                return False
+        
         return True
 
     def get_truly_safe_neighbors(self):
@@ -468,7 +482,7 @@ class Agent:
         for pos, data in self.inference.kb.items():
             if data['visited']:
                 # Lấy percepts từ environment thay vì từ self.percepts
-                percepts = self.env.get_percepts(pos[0], pos[1])
+                percepts = self.env.get_percepts(pos[0], pos[1]) # lát check
                 if not percepts.get('breeze', False):
                     visited_safe.append(pos)
         
