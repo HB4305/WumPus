@@ -98,13 +98,13 @@ class Environment:
             self.agent_pos = (new_x, new_y)
             return {"bump": False, **self.get_percepts()}
 
-    def rotate_agent(self, direction):
-        dirs = ["NORTH", "EAST", "SOUTH", "WEST"]
-        idx = dirs.index(self.agent_dir)
-        if direction == "LEFT":
-            self.agent_dir = dirs[(idx - 1) % 4]
-        elif direction == "RIGHT":
-            self.agent_dir = dirs[(idx + 1) % 4]
+    # def rotate_agent(self, direction):
+    #     dirs = ["NORTH", "EAST", "SOUTH", "WEST"]
+    #     idx = dirs.index(self.agent_dir)
+    #     if direction == "LEFT":
+    #         self.agent_dir = dirs[(idx - 1) % 4]
+    #     elif direction == "RIGHT":
+    #         self.agent_dir = dirs[(idx + 1) % 4]
 
     def shoot_arrow(self):
         print("[ENV] Agent shoots an arrow")

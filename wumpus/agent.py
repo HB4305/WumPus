@@ -1,5 +1,6 @@
 from .planner import astar_search
 from .algorithm import heuristic
+from .utils import get_neighbors
 
 class Agent:
     def __init__(self, env, inference):
@@ -14,30 +15,195 @@ class Agent:
         self.action_log = []
         self.escaped = False
         self.dead = False
-        
+    
+   # ======== HÀM XOAY ======== #
+    def turn_left(self):
+        dirs = ["NORTH", "WEST", "SOUTH", "EAST"]
+        idx = dirs.index(self.direction)
+        self.direction = dirs[(idx + 1) % 4]
+        self.action_log.append("TURN_LEFT")
+        return "TURN_LEFT"
+
+    def turn_right(self):
+        dirs = ["NORTH", "EAST", "SOUTH", "WEST"]
+        idx = dirs.index(self.direction)
+        self.direction = dirs[(idx + 1) % 4]
+        self.action_log.append("TURN_RIGHT")
+        return "TURN_RIGHT"
+
+    def turn_towards(self, target_dir):
+        """Chỉ xoay trái hoặc phải 1 bước mỗi lượt"""
+        dirs = ["NORTH", "EAST", "SOUTH", "WEST"]
+        cur_idx = dirs.index(self.direction)
+        tgt_idx = dirs.index(target_dir)
+
+        # Xác định xoay trái hay phải
+        if (cur_idx - tgt_idx) % 4 == 1:
+            return self.turn_left()
+        elif (tgt_idx - cur_idx) % 4 == 1:
+            return self.turn_right()
+        else:
+            # Nếu khác 180° → xoay trái hoặc phải tùy ý (ưu tiên trái)
+            return self.turn_left()
+
+    def get_direction_to(self, next_pos):
+        nx, ny = next_pos
+        if nx > self.x: return "EAST"
+        if nx < self.x: return "WEST"
+        if ny > self.y: return "NORTH"
+        if ny < self.y: return "SOUTH"
+        return self.direction
+
+
+    def get_wumpus_direction(self):
+        possible_wumpus_cells = self.inference.get_possible_wumpus()
+        if not possible_wumpus_cells:
+            return None
+
+        min_dist = float('inf')
+        target_dir = None
+        for (wx, wy) in possible_wumpus_cells:
+            # Chỉ xét nếu cùng hàng hoặc cùng cột
+            if wx == self.x or wy == self.y:
+                dist = abs(wx - self.x) + abs(wy - self.y)
+                if dist < min_dist:
+                    min_dist = dist
+                    if wx > self.x:
+                        target_dir = "EAST"
+                    elif wx < self.x:
+                        target_dir = "WEST"
+                    elif wy > self.y:
+                        target_dir = "NORTH"
+                    elif wy < self.y:
+                        target_dir = "SOUTH"
+        return target_dir
+
+    # def step(self):
+    #     if self.escaped or self.dead:
+    #         return "STAY"
+
+    #     # Check if agent died BEFORE taking action
+    #     if self.check_death():
+    #         self.dead = True
+    #         self.point -= 1000
+    #         return "DIE"
+
+    #     # Get current percepts and update knowledge
+    #     percepts = self.env.get_percepts(self.x, self.y)
+    #     self.inference.update_knowledge((self.x, self.y), percepts)
+
+    #     # If found gold, grab it
+    #     if percepts["glitter"] and not self.has_gold:
+    #         self.has_gold = True
+    #         result = self.env.grab_gold()
+    #         self.action_log.append("GRAB")
+    #         self.point += 10
+    #         return "GRAB"
+
+    #     # If has gold and at start, climb out
+    #     if self.has_gold and (self.x, self.y) == (0, 0):
+    #         result = self.env.climb_out()
+    #         self.escaped = result["escaped"]
+    #         self.action_log.append("CLIMB")
+    #         if self.escaped:
+    #             self.point += 1000
+    #         return "CLIMB"
+
+    #     # If has gold, go home
+    #     if self.has_gold:
+    #         path_home = astar_search((self.x, self.y), (0, 0), 
+    #                                self.inference.is_safe, self.env.size)
+    #         if path_home:
+    #             next_pos = path_home[0]
+    #             # self.face_towards(next_pos)   # ✅ xoay trước
+    #             if self.is_move_safe(next_pos):
+    #                 self.move_to(next_pos)
+    #                 return "MOVE"
+    #             else:
+    #                 return "STUCK"
+    #         else:
+    #             return "STUCK"
+
+    #     # Try to shoot wumpus if possible and beneficial
+    #     if (self.has_arrow and percepts["stench"] and self.can_shoot_wumpus_safely()):
+    #         # result = self.env.shoot_arrow()
+    #         # self.has_arrow = False
+    #         # self.point -= 10
+    #         # if result["scream"]:
+    #         #     self.inference.remove_wumpus_after_kill((self.x, self.y), self.direction)
+    #         #     self.action_log.append("SHOOT_HIT")
+    #         #     return "SHOOT_HIT"
+    #         # else:
+    #         #     self.action_log.append("SHOOT_MISS")
+    #         #     return "SHOOT_MISS"
+    #         target_dir = self.get_wumpus_direction()
+    #         if target_dir and self.direction != target_dir:
+    #             return self.turn_towards(target_dir)
+    #         result = self.env.shoot_arrow()
+    #         self.has_arrow = False
+    #         self.point -= 10
+    #         if result["scream"]:
+    #             self.inference.remove_wumpus_after_kill((self.x, self.y), self.direction)
+    #             self.action_log.append("SHOOT_HIT")
+    #             return "SHOOT_HIT"
+    #         else:
+    #             self.action_log.append("SHOOT_MISS")
+    #             return "SHOOT_MISS"
+
+    #     # Look for safe unvisited neighbors
+    #     safe_neighbors = self.get_truly_safe_neighbors()
+    #     if safe_neighbors:
+    #         # Choose the best neighbor (closest to center or unexplored)
+    #         best_neighbor = self.choose_best_neighbor(safe_neighbors)
+    #         self.move_to(best_neighbor)
+    #         return "MOVE"
+
+    #     # Find path to safe unexplored area
+    #     exploration_target = self.find_safe_exploration_target()
+    #     if exploration_target:
+    #         path = astar_search((self.x, self.y), exploration_target,
+    #                           self.inference.is_safe, self.env.size)
+    #         if path and self.is_move_safe(path[0]):
+    #             self.move_to(path[0])
+    #             return "MOVE"
+
+    #     # If no safe moves available and no gold, try to go back to start
+    #     if not self.has_gold and (self.x, self.y) != (0, 0):
+    #         path_home = astar_search((self.x, self.y), (0, 0),
+    #                                self.inference.is_safe, self.env.size)
+    #         if path_home and self.is_move_safe(path_home[0]):
+    #             self.move_to(path_home[0])
+    #             return "MOVE"
+
+
+    #     if percepts["breeze"]:
+    #         self._handle_breeze_situation()
+
+    #     # No safe moves available
+    #     return "STAY"
+
+    # ======== STEP ======== #
     def step(self):
         if self.escaped or self.dead:
             return "STAY"
 
-        # Check if agent died BEFORE taking action
         if self.check_death():
             self.dead = True
             self.point -= 1000
             return "DIE"
 
-        # Get current percepts and update knowledge
         percepts = self.env.get_percepts(self.x, self.y)
         self.inference.update_knowledge((self.x, self.y), percepts)
 
-        # If found gold, grab it
+        # ---- GRAB GOLD ----
         if percepts["glitter"] and not self.has_gold:
             self.has_gold = True
-            result = self.env.grab_gold()
+            self.env.grab_gold()
             self.action_log.append("GRAB")
             self.point += 10
             return "GRAB"
 
-        # If has gold and at start, climb out
+        # ---- CLIMB OUT ----
         if self.has_gold and (self.x, self.y) == (0, 0):
             result = self.env.climb_out()
             self.escaped = result["escaped"]
@@ -46,22 +212,26 @@ class Agent:
                 self.point += 1000
             return "CLIMB"
 
-        # If has gold, go home
+        # ---- GO HOME WITH GOLD ----
         if self.has_gold:
-            path_home = astar_search((self.x, self.y), (0, 0), 
-                                   self.inference.is_safe, self.env.size)
+            path_home = astar_search((self.x, self.y), (0, 0),
+                                     self.inference.is_safe, self.env.size)
             if path_home:
                 next_pos = path_home[0]
+                target_dir = self.get_direction_to(next_pos)
+                if self.direction != target_dir:
+                    return self.turn_towards(target_dir)  # xoay trước
                 if self.is_move_safe(next_pos):
                     self.move_to(next_pos)
                     return "MOVE"
-                else:
-                    return "STUCK"
-            else:
                 return "STUCK"
+            return "STUCK"
 
-        # Try to shoot wumpus if possible and beneficial
-        if (self.has_arrow and percepts["stench"] and self.can_shoot_wumpus_safely()):
+        # ---- SHOOT WUMPUS ----
+        if self.has_arrow and percepts["stench"] and self.can_shoot_wumpus_safely():
+            target_dir = self.get_wumpus_direction()
+            if target_dir and self.direction != target_dir:
+                return self.turn_towards(target_dir)  # xoay trước khi bắn
             result = self.env.shoot_arrow()
             self.has_arrow = False
             self.point -= 10
@@ -73,37 +243,47 @@ class Agent:
                 self.action_log.append("SHOOT_MISS")
                 return "SHOOT_MISS"
 
-        # Look for safe unvisited neighbors
+        # ---- MOVE TO SAFE NEIGHBOR ----
         safe_neighbors = self.get_truly_safe_neighbors()
         if safe_neighbors:
-            # Choose the best neighbor (closest to center or unexplored)
             best_neighbor = self.choose_best_neighbor(safe_neighbors)
+            target_dir = self.get_direction_to(best_neighbor)
+            if self.direction != target_dir:
+                return self.turn_towards(target_dir)  # xoay trước khi đi
             self.move_to(best_neighbor)
             return "MOVE"
 
-        # Find path to safe unexplored area
+        # ---- EXPLORE SAFE UNKNOWN ----
         exploration_target = self.find_safe_exploration_target()
         if exploration_target:
             path = astar_search((self.x, self.y), exploration_target,
-                              self.inference.is_safe, self.env.size)
-            if path and self.is_move_safe(path[0]):
-                self.move_to(path[0])
-                return "MOVE"
+                                self.inference.is_safe, self.env.size)
+            if path:
+                target_dir = self.get_direction_to(path[0])
+                if self.direction != target_dir:
+                    return self.turn_towards(target_dir)
+                if self.is_move_safe(path[0]):
+                    self.move_to(path[0])
+                    return "MOVE"
 
-        # If no safe moves available and no gold, try to go back to start
+        # ---- RETURN HOME IF NOTHING ELSE ----
         if not self.has_gold and (self.x, self.y) != (0, 0):
             path_home = astar_search((self.x, self.y), (0, 0),
-                                   self.inference.is_safe, self.env.size)
-            if path_home and self.is_move_safe(path_home[0]):
-                self.move_to(path_home[0])
-                return "MOVE"
+                                     self.inference.is_safe, self.env.size)
+            if path_home:
+                target_dir = self.get_direction_to(path_home[0])
+                if self.direction != target_dir:
+                    return self.turn_towards(target_dir)
+                if self.is_move_safe(path_home[0]):
+                    self.move_to(path_home[0])
+                    return "MOVE"
 
-
+        # ---- HANDLE BREEZE ----
         if percepts["breeze"]:
             self._handle_breeze_situation()
 
-        # No safe moves available
         return "STAY"
+
 
     def check_death(self):
         """Check if agent is in a deadly cell"""
@@ -138,7 +318,6 @@ class Agent:
 
     def get_truly_safe_neighbors(self):
         """Get neighbors that are definitely safe"""
-        from .utils import get_neighbors
         neighbors = get_neighbors((self.x, self.y), self.env.size)
         safe_neighbors = []
         
@@ -338,4 +517,3 @@ class Agent:
             path = astar_search((self.x, self.y), (0, 0),
                             self.inference.is_safe, self.env.size)
         return path
-    
