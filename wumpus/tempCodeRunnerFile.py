@@ -1,0 +1,1 @@
+ not kb_info.get('possible_pit', False

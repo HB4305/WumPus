@@ -203,23 +203,41 @@ class Agent:
             return False
         
         # Nếu chưa thăm và có khả năng là pit hoặc wumpus thì coi như không an toàn
-        if not kb_info.get('visited', False):
-            if kb_info.get('possible_pit', False):
-                return False
-            if kb_info.get('possible_wumpus', False):
-                return False
+        # if not kb_info.get('visited', False):
+        #     if kb_info.get('possible_pit', False):
+        #         return False
+        #     if kb_info.get('possible_wumpus', False):
+        #         return False
         
-        return True
+        # return True
+        # Chỉ di nếu đã thăm hoặc chắc chắn không có pit/wumpus
+        if kb_info.get('visited', False):
+            return True
+        if not kb_info.get('possible_pit', False) and not kb_info.get('possible_wumpus', False):
+            return True
 
+        return False
+
+    # def get_truly_safe_neighbors(self):
+    #     """Get neighbors that are definitely safe"""
+    #     neighbors = get_neighbors((self.x, self.y), self.env.size)
+    #     safe_neighbors = []
+        
+    #     for pos in neighbors:
+    #         if (self.is_move_safe(pos) and 
+    #             not self.inference.kb.get(pos, {}).get('visited', False)):
+    #             safe_neighbors.append(pos)
+        
+    #     return safe_neighbors
     def get_truly_safe_neighbors(self):
-        """Get neighbors that are definitely safe"""
         neighbors = get_neighbors((self.x, self.y), self.env.size)
         safe_neighbors = []
         
         for pos in neighbors:
-            if (self.is_move_safe(pos) and 
-                not self.inference.kb.get(pos, {}).get('visited', False)):
+            if self.is_move_safe(pos) and not self.inference.kb.get(pos, {}).get('visited', False):
                 safe_neighbors.append(pos)
+                # mark neighbors of pos safe luôn
+                self.inference.mark_safe_and_neighbors(pos)
         
         return safe_neighbors
 

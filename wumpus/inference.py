@@ -261,14 +261,35 @@ class Inference:
             self.kb[pos][danger_type] = True
             self.kb[pos]['safe'] = False
 
+    # def _update_safety(self):
+    #     """Cập nhật trạng thái an toàn cho tất cả ô"""
+    #     for pos in self.kb:
+    #         cell = self.kb[pos]
+    #         if cell['visited']:
+    #             cell['safe'] = True
+    #         else:
+    #             cell['safe'] = not (cell['possible_pit'] or cell['possible_wumpus'])
     def _update_safety(self):
         """Cập nhật trạng thái an toàn cho tất cả ô"""
         for pos in self.kb:
             cell = self.kb[pos]
+
+            # Nếu đã thăm thì chắc chắn an toàn
             if cell['visited']:
                 cell['safe'] = True
-            else:
-                cell['safe'] = not (cell['possible_pit'] or cell['possible_wumpus'])
+
+                # Nếu percept của ô này không có breeze và stench => neighbor an toàn
+                percept = cell.get('percept', {})
+                if percept and not percept.get('breeze', False) and not percept.get('stench', False):
+                    for nx, ny in get_neighbors(pos, self.size):
+                        self._ensure_kb((nx, ny))
+                        self.kb[(nx, ny)]['possible_pit'] = False
+                        self.kb[(nx, ny)]['possible_wumpus'] = False
+                        self.kb[(nx, ny)]['safe'] = True
+            # else:
+            #     # Nếu chưa thăm, safe khi không có khả năng pit hoặc wumpus
+            #     cell['safe'] = not (cell['possible_pit'] or cell['possible_wumpus'])
+
 
     def _ensure_kb(self, pos): # đảm bảo ô (x, y) đã có trong knowledge base
         if pos not in self.kb:
@@ -284,13 +305,15 @@ class Inference:
         facts = self.kb[pos]
         # Only consider safe if visited OR definitely safe (no possible dangers)
         return facts['visited'] or (facts['safe'] and not facts['possible_pit'] and not facts['possible_wumpus'])
-
+        # return facts['visited'] or facts['safe']
+                                    
     def is_definitely_safe(self, pos):
         """More strict safety check for pathfinding"""
         self._ensure_kb(pos)
         facts = self.kb[pos]
         return facts['visited'] or (not facts['possible_pit'] and not facts['possible_wumpus'])
-
+        # return facts['visited'] or facts['safe']
+    
     def get_safe_unvisited_neighbors(self, current_pos):
         neighbors = get_neighbors(current_pos, self.size)
         safe_neighbors = []
@@ -298,6 +321,21 @@ class Inference:
             if self.is_definitely_safe(pos) and not self.kb.get(pos, {}).get('visited', False):
                 safe_neighbors.append(pos)
         return safe_neighbors
+    
+    def mark_safe_and_neighbors(self, pos):
+        """Khi pos được xác định safe, đánh dấu pos và các neighbors là safe."""
+        self._ensure_kb(pos)
+        self.kb[pos]['safe'] = True
+
+        neighbors = get_neighbors(pos, self.size)
+        for npos in neighbors:
+            self._ensure_kb(npos)
+            # Nếu chưa visited và chưa chắc là pit/wumpus thì đánh dấu safe tạm
+            if (not self.kb[npos].get('visited', False) and
+                not self.kb[npos].get('possible_pit', False) and
+                not self.kb[npos].get('possible_wumpus', False)):
+                self.kb[npos]['safe'] = True
+
 
     def get_kb(self):
         return self.kb
