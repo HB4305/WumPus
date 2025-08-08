@@ -156,6 +156,22 @@ class Environment:
             self.agent_escaped = True
             return {"escaped": True, "has_gold": self.gold_collected}
         return {"escaped": False}
+    
+    def update_stench(self, removed_wumpus_pos):
+        """Update stench markers after a Wumpus is removed."""
+        # Remove the Wumpus from the positions set
+        if removed_wumpus_pos in self.wumpus_positions:
+            self.wumpus_positions.remove(removed_wumpus_pos)
+
+        # Clear all stench markers
+        for y in range(self.size):
+            for x in range(self.size):
+                self.grid[y][x].stench = False
+
+        # Recalculate stench based on remaining Wumpus positions
+        for wumpus_x, wumpus_y in self.wumpus_positions:
+            for nx, ny in get_neighbors((wumpus_x, wumpus_y), self.size):
+                self.grid[ny][nx].stench = True
 
 
     def is_terminal(self):

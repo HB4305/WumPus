@@ -1,8 +1,9 @@
 from collections import defaultdict
+from .environment import Environment
 from .utils import get_neighbors
 
 class Inference:
-    def __init__(self, size):
+    def __init__(self, size, environment):
         self.size = size
         self.kb = defaultdict(lambda: {
             'visited': False,
@@ -328,32 +329,8 @@ class Inference:
             current_y += dy
         return False
 
-    # def remove_wumpus_after_kill(self, agent_pos, agent_dir):
-    #     """Remove wumpus from KB after successful kill"""
-    #     x, y = agent_pos
-    #     dx, dy = {
-    #         "NORTH": (0, 1),
-    #         "EAST": (1, 0),
-    #         "SOUTH": (0, -1), 
-    #         "WEST": (-1, 0)
-    #     }.get(agent_dir, (0, 0))
-        
-    #     current_x, current_y = x + dx, y + dy
-    #     while 0 <= current_x < self.size and 0 <= current_y < self.size:
-    #         pos = (current_x, current_y)
-    #         if pos in self.kb and self.kb[pos].get('possible_wumpus', False):
-    #             self.kb[pos]['possible_wumpus'] = False
-    #             self.kb[pos]['safe'] = True
-    #             # Update neighbors that no longer have stench
-    #             for neighbor in get_neighbors(pos, self.size):
-    #                 self._ensure_kb(neighbor)
-    #             break
-    #         current_x += dx
-    #         current_y += dy
-        
-    #     self._update_safety()
     def remove_wumpus_after_kill(self, agent_pos, agent_dir):
-        """Xóa Wumpus khỏi KB và cập nhật các ô xung quanh sau khi giết thành công"""
+        """Remove wumpus from KB after successful kill and update stench using environment"""
         x, y = agent_pos
         dx, dy = {
             "NORTH": (0, 1),
@@ -366,30 +343,54 @@ class Inference:
         while 0 <= current_x < self.size and 0 <= current_y < self.size:
             pos = (current_x, current_y)
             if pos in self.kb and self.kb[pos].get('possible_wumpus', False):
-                # Xác nhận Wumpus đã bị giết
+                # Mark Wumpus as dead
                 self.kb[pos]['possible_wumpus'] = False
                 self.kb[pos]['safe'] = True
-                self.confirmed_wumpus.discard(pos)
-
-                # Kiểm tra và cập nhật các ô xung quanh Wumpus bị giết
-                for neighbor in get_neighbors(pos, self.size):
-                    self._ensure_kb(neighbor)
-
-                    # Nếu ô này từng có stench, kiểm tra xem còn Wumpus nào khác tạo ra không
-                    if self.percepts.get(neighbor, {}).get('stench', False):
-                        still_has_wumpus = False
-                        for other in get_neighbors(neighbor, self.size):
-                            if self.kb.get(other, {}).get('possible_wumpus', False):
-                                still_has_wumpus = True
-                                break
-                        
-                        # Nếu không còn Wumpus nào khác gây stench, xóa stench
-                        if not still_has_wumpus:
-                            self.percepts[neighbor]['stench'] = False
-
-                break  # Dừng sau khi xử lý Wumpus bị giết
+                break
             current_x += dx
             current_y += dy
 
         self._update_safety()
+
+
+    # def remove_wumpus_after_kill(self, agent_pos, agent_dir):
+    #     """Xóa Wumpus khỏi KB và cập nhật các ô xung quanh sau khi giết thành công"""
+    #     x, y = agent_pos
+    #     dx, dy = {
+    #         "NORTH": (0, 1),
+    #         "EAST": (1, 0),
+    #         "SOUTH": (0, -1), 
+    #         "WEST": (-1, 0)
+    #     }.get(agent_dir, (0, 0))
+        
+    #     current_x, current_y = x + dx, y + dy
+    #     while 0 <= current_x < self.size and 0 <= current_y < self.size:
+    #         pos = (current_x, current_y)
+    #         if pos in self.kb and self.kb[pos].get('possible_wumpus', False):
+    #             # Xác nhận Wumpus đã bị giết
+    #             self.kb[pos]['possible_wumpus'] = False
+    #             self.kb[pos]['safe'] = True
+    #             self.confirmed_wumpus.discard(pos)
+
+    #             # Kiểm tra và cập nhật các ô xung quanh Wumpus bị giết
+    #             for neighbor in get_neighbors(pos, self.size):
+    #                 self._ensure_kb(neighbor)
+
+    #                 # Nếu ô này từng có stench, kiểm tra xem còn Wumpus nào khác tạo ra không
+    #                 if self.percepts.get(neighbor, {}).get('stench', False):
+    #                     still_has_wumpus = False
+    #                     for other in get_neighbors(neighbor, self.size):
+    #                         if self.kb.get(other, {}).get('possible_wumpus', False):
+    #                             still_has_wumpus = True
+    #                             break
+                        
+    #                     # Nếu không còn Wumpus nào khác gây stench, xóa stench
+    #                     if not still_has_wumpus:
+    #                         self.percepts[neighbor]['stench'] = False
+
+    #             break  # Dừng sau khi xử lý Wumpus bị giết
+    #         current_x += dx
+    #         current_y += dy
+
+    #     self._update_safety()
 

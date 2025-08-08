@@ -45,7 +45,7 @@ def main():
 
     # Create environment and agent
     env = Environment(size=size, k=wumpus_count, pit_prob=pit_prob)
-    inference = Inference(size)
+    inference = Inference(size, env)
     agent = Agent(env, inference)
 
     # Xuất bản đồ vào file trong folder input
