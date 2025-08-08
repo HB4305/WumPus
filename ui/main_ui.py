@@ -106,6 +106,7 @@ def showMenu():
             result = inputForm()
             if result is not None:  # Only return if we got valid input
                 return result
+            # return (3, 0.2, 2)
             ##############################################
             # If result is None, continue the menu loop
         elif choose_option == 1:  # Quit
@@ -309,15 +310,6 @@ def showAgentMove(_, path, maps_data, __, agent_point):
 
         elif action == 'Shoot' or action == 'SHOOT_HIT' or action == 'SHOOT_MISS':
             # Calculate shoot direction based on current_direction
-            direction_to_ui = {
-                "EAST": 0,   # right
-                "NORTH": 1,  # up
-                "WEST": 2,   # left
-                "SOUTH": 3   # down
-            }
-            ui_direction = direction_to_ui.get(current_direction, 0)
-            
-            # Calculate target position based on agent's actual direction
             dx, dy = {
                 "NORTH": (0, 1),
                 "EAST": (1, 0),
@@ -325,58 +317,94 @@ def showAgentMove(_, path, maps_data, __, agent_point):
                 "WEST": (-1, 0)
             }.get(current_direction, (1, 0))
             
-            x_shoot, y_shoot = x + dx, y + dy
+            # Track visited cells up to current step
+            visited_cells = set()
+            for step_idx in range(current_step + 1):  # Include current step
+                step_x, step_y = path[step_idx][0]
+                visited_cells.add((step_x, step_y))
             
-            # Show shoot animation
-            if 0 <= x_shoot < M2.w and 0 <= y_shoot < M2.h:
-                M2.showShoot(y_shoot, x_shoot, M2.h)
+            # Animate arrow movement until it hits something or wall
+            arrow_x, arrow_y = x, y
+            hit_target = False
+            arrow_path = []  # Track arrow's path
             
-            # Check if shot hit a Wumpus
-            shot_hit = False
-            if action == 'SHOOT_HIT':
-                shot_hit = True
-            elif len(maps) > count_map and 0 <= y_shoot < len(maps[count_map]) and 0 <= x_shoot < len(maps[count_map][y_shoot]):
-                # Check if there's a Wumpus at the shot location
-                cell_data = maps[count_map][y_shoot][x_shoot]
-                if isinstance(cell_data, list):
-                    shot_hit = 'W' in cell_data[0]
+            while True:
+                # Move arrow to next position
+                arrow_x += dx
+                arrow_y += dy
+                
+                # Check if arrow is out of bounds (hit wall)
+                if arrow_x < 0 or arrow_x >= map_size or arrow_y < 0 or arrow_y >= map_size:
+                    break
+                
+                arrow_path.append((arrow_x, arrow_y))
+                
+                # Show arrow at current position
+                M2.showShoot(arrow_y, arrow_x, M2.h)
+                pygame.display.flip()
+                pygame.time.wait(200)  # Arrow movement delay
+                
+                # Check if arrow hit a Wumpus at this position
+                if (arrow_y < len(maps[count_map]) and 
+                    arrow_x < len(maps[count_map][arrow_y])):
+                    
+                    cell_data = maps[count_map][arrow_y][arrow_x]
+                    if isinstance(cell_data, list):
+                        has_wumpus = 'W' in cell_data[0]
+                    else:
+                        has_wumpus = getattr(cell_data, 'wumpus', False)
+                    
+                    if has_wumpus:
+                        hit_target = True
+                        break
+                
+                # Restore cell state: if visited, show path; if not visited, show unknown
+                if (arrow_x, arrow_y) in visited_cells:
+                    M2.showPath(arrow_x, arrow_y)
                 else:
-                    shot_hit = getattr(cell_data, 'wumpus', False)
+                    # Show unknown with overlay for unvisited cells
+                    if (arrow_y < len(maps[count_map]) and 
+                        arrow_x < len(maps[count_map][arrow_y])):
+                        M2.showUnknownWithOverlay(arrow_y, arrow_x, M2.h, maps[count_map][arrow_y][arrow_x])
+                    else:
+                        M2.showUnknown(arrow_y, arrow_x, M2.h)
             
-            if shot_hit:
-                # Show scream immediately and update display
-                M2.showScream(y_shoot, x_shoot, M2.h)
+            # Handle hit result
+            if hit_target and action == 'SHOOT_HIT':
+                # Show scream at hit location
+                M2.showScream(arrow_y, arrow_x, M2.h)
                 pygame.display.flip()
                 pygame.time.wait(500)  # Show scream for 0.5 seconds
                 
-                killed_wumpus_positions.add((x_shoot, y_shoot))
+                killed_wumpus_positions.add((arrow_x, arrow_y))
                 
                 # Remove Wumpus from current and all future maps
                 for map_idx in range(count_map, len(maps)):
-                    if (0 <= y_shoot < len(maps[map_idx]) and 
-                        0 <= x_shoot < len(maps[map_idx][y_shoot])):
+                    if (0 <= arrow_y < len(maps[map_idx]) and 
+                        0 <= arrow_x < len(maps[map_idx][arrow_y])):
                         
                         # Remove Wumpus from cell
-                        if isinstance(maps[map_idx][y_shoot][x_shoot], list):
-                            cell_content = maps[map_idx][y_shoot][x_shoot][0]
-                            maps[map_idx][y_shoot][x_shoot][0] = cell_content.replace('W', '')
-                            if maps[map_idx][y_shoot][x_shoot][0] == '':
-                                maps[map_idx][y_shoot][x_shoot][0] = '-'
+                        if isinstance(maps[map_idx][arrow_y][arrow_x], list):
+                            cell_content = maps[map_idx][arrow_y][arrow_x][0]
+                            maps[map_idx][arrow_y][arrow_x][0] = cell_content.replace('W', '')
+                            if maps[map_idx][arrow_y][arrow_x][0] == '':
+                                maps[map_idx][arrow_y][arrow_x][0] = '-'
                         else:
-                            maps[map_idx][y_shoot][x_shoot].wumpus = False
+                            maps[map_idx][arrow_y][arrow_x].wumpus = False
                         
                         # Remove stench from adjacent cells
                         for dx2, dy2 in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
-                            adj_x, adj_y = x_shoot + dx2, y_shoot + dy2
+                            adj_x, adj_y = arrow_x + dx2, arrow_y + dy2
                             if (0 <= adj_x < map_size and 0 <= adj_y < map_size and
                                 adj_y < len(maps[map_idx]) and adj_x < len(maps[map_idx][adj_y])):
                                 
-                                # Check if there are other Wumpuses nearby before removing stench
+                                # Check if there are other living Wumpuses nearby before removing stench
                                 other_wumpus_nearby = False
                                 for dx3, dy3 in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
                                     check_x, check_y = adj_x + dx3, adj_y + dy3
                                     if (0 <= check_x < map_size and 0 <= check_y < map_size and
-                                        check_y < len(maps[map_idx]) and check_x < len(maps[map_idx][check_y])):
+                                        check_y < len(maps[map_idx]) and check_x < len(maps[map_idx][check_y]) and
+                                        (check_x, check_y) not in killed_wumpus_positions):  # Exclude killed Wumpus
                                         
                                         if isinstance(maps[map_idx][check_y][check_x], list):
                                             if 'W' in maps[map_idx][check_y][check_x][0]:
@@ -387,7 +415,7 @@ def showAgentMove(_, path, maps_data, __, agent_point):
                                                 other_wumpus_nearby = True
                                                 break
                                 
-                                # Only remove stench if no other Wumpus nearby
+                                # Only remove stench if no other living Wumpus nearby
                                 if not other_wumpus_nearby:
                                     if isinstance(maps[map_idx][adj_y][adj_x], list):
                                         maps[map_idx][adj_y][adj_x][1] = False  # Remove stench
@@ -402,17 +430,27 @@ def showAgentMove(_, path, maps_data, __, agent_point):
                     # If no next map, update current map display
                     M2.updateMap(maps[count_map])
                 
-                # Refresh the entire board to show updated map without Wumpus and stench
+                # Redraw the entire board to ensure stench changes are visible
                 showGameBackground(screen, level=1)
                 M2.showUnknownBoard()
                 
-                # Re-reveal all previously visited cells
-                for step_idx in range(current_step):
+                # # Re-reveal all previously visited cells
+                # for step_x, step_y in visited_cells:
+                #     M2.showPath(step_x, step_y)
+                # Re-reveal all previously visited cells INCLUDING (0,0)
+                visited_positions = set()
+                visited_positions.add((0, 0))  
+                
+                for step_idx in range(current_step + 1):  
                     step_x, step_y = path[step_idx][0]
-                    M2.showPath(step_x, step_y)
+                    visited_positions.add((step_x, step_y))
+                
+                # Reveal all visited positions
+                for pos_x, pos_y in visited_positions:
+                    M2.showPath(pos_x, pos_y)
+                
                 
                 # Show current position with agent
-                M2.showPath(x, y)
                 M2.showAgent(y, x, M2.h)
                 
                 # Always refresh killed Wumpus positions display (show as empty)
@@ -424,8 +462,18 @@ def showAgentMove(_, path, maps_data, __, agent_point):
                 pygame.display.flip()
             
             else:
-                # Miss - just show the arrow
-                pygame.time.wait(200)  # Brief pause to show arrow
+                # Miss - restore all arrow path cells to their proper state
+                for arr_x, arr_y in arrow_path:
+                    if (arr_x, arr_y) in visited_cells:
+                        M2.showPath(arr_x, arr_y)
+                    else:
+                        # Show unknown with overlay for unvisited cells
+                        if (arr_y < len(maps[count_map]) and 
+                            arr_x < len(maps[count_map][arr_y])):
+                            M2.showUnknownWithOverlay(arr_y, arr_x, M2.h, maps[count_map][arr_y][arr_x])
+                        else:
+                            M2.showUnknown(arr_y, arr_x, M2.h)
+                pygame.time.wait(200)  # Brief pause to show final state
 
         I2.showLeftBar(map_size, score=current_score)
         current_step += 1
