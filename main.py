@@ -3,6 +3,8 @@ from wumpus.inference import Inference
 from wumpus.agent import Agent
 from ui import main_ui
 import copy
+from advanced.agent_advanced import AgentAdvanced
+from advanced.inference_advanced import InferenceAdvanced
 
 
 def write_output(file_path, agent, RES):
@@ -127,7 +129,59 @@ def main():
         print(f"Agent died: {agent.dead}")
     else:
         # Game mode 1 (Advanced)
-        pass
+        env = Environment(size=size, k=wumpus_count, pit_prob=pit_prob)
+        inference = InferenceAdvanced(size, env)
+        agent = AgentAdvanced(env, inference)
+        
+        print(f"[MAIN] Created {size}x{size} world with {wumpus_count} Wumpus and {pit_prob} pit probability")
+        print(f"[MAIN] Game Mode: Advanced")
+
+        main_ui.showWumpusWorld(env.grid)
+
+        MAPS = []
+        MAPS.append(copy.deepcopy(env.grid))
+        RESULT = []
+        MAX_STEPS = size * size * 4
+        step_count = 0
+
+        while not agent.finished() and step_count < MAX_STEPS:
+            print(f"\n=== STEP {step_count + 1} ===")
+            print(f"Agent at ({agent.x}, {agent.y})")
+
+            current_cell = env.grid[agent.y][agent.x]
+            if current_cell.wumpus:
+                print(f"[MAIN] WARNING: Agent is on Wumpus cell!")
+            if current_cell.pit:
+                print(f"[MAIN] WARNING: Agent is on Pit cell!")
+
+            action = agent.step()
+            step_count += 1
+
+            RESULT.append(((agent.x, agent.y), action, agent.point))
+            MAPS.append(copy.deepcopy(env.grid))
+
+            print(f"[MAIN] Step {step_count}: {action}, Score: {agent.point}")
+
+            if action == "DIE" or agent.dead:
+                print("[MAIN] Agent died!")
+                break
+            elif action == "CLIMB":
+                print("[MAIN] Agent successfully escaped!")
+                break
+            elif action == "STAY":
+                print("[MAIN] Agent has no safe moves")
+                break
+
+        main_ui.showAgentMove(None, RESULT, MAPS, None, agent.point)
+        write_output(file_path="output/result.txt", agent=agent, RES=RESULT)
+
+        print(f"\n=== FINAL RESULTS ===")
+        print(f"Steps taken: {step_count}")
+        print(f"Final score: {agent.point}")
+        print(f"Gold collected: {agent.has_gold}")
+        print(f"Agent escaped: {agent.finished()}")
+        print(f"Agent died: {agent.dead}")
+        # pass
 
 
 if __name__ == "__main__":
