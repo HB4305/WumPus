@@ -49,4 +49,6 @@ class InferenceAdvanced(Inference):
                 self.kb[pos]['safe'] = True
 
         for pos in new_possible_positions:
-            self.k
+            for pos in new_possible_positions:
+                self.kb[pos]['possible_wumpus'] = True
+                self.kb[pos]['safe'] = False
