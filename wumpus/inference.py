@@ -18,6 +18,8 @@ class Inference:
         self.confirmed_wumpus = set()  # Theo dõi ô chắc chắn có Wumpus
         self.breeze_cells = set()
         self.confirmed_no_pits = set()
+        # Mới thêm
+        self.environment = environment  # Lưu môi trường để truy cập thông tin
         
 
     def update_knowledge(self, position, percept):

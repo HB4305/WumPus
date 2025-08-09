@@ -5,6 +5,7 @@ from ui import main_ui
 import copy
 from advanced.agent_advanced import AgentAdvanced
 from advanced.inference_advanced import InferenceAdvanced
+from advanced.environment_advanced import EnvironmentAdvanced
 
 
 def write_output(file_path, agent, RES):
@@ -129,7 +130,8 @@ def main():
         print(f"Agent died: {agent.dead}")
     else:
         # Game mode 1 (Advanced)
-        env = Environment(size=size, k=wumpus_count, pit_prob=pit_prob)
+        # env = Environment(size=size, k=wumpus_count, pit_prob=pit_prob)
+        env = EnvironmentAdvanced(size=size, k=wumpus_count, pit_prob=pit_prob)
         inference = InferenceAdvanced(size, env)
         agent = AgentAdvanced(env, inference)
         

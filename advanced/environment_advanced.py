@@ -1,5 +1,6 @@
 import random
 from wumpus.environment import Environment
+from wumpus.utils import get_neighbors
 
 class EnvironmentAdvanced(Environment):
     def __init__(self, *args, **kwargs):
@@ -61,7 +62,21 @@ class EnvironmentAdvanced(Environment):
             else:
                 chosen_pos = (wx, wy)
             new_positions.append(chosen_pos)
+        
+        # Xoá stench cũ 
+        for (wx, wy) in self.wumpus_positions:
+            for nx, ny in get_neighbors((wx, wy), self.size):
+                self.grid[ny][nx].stench = False
+
         self.wumpus_positions = new_positions
+
+        # In ra vị trí mới của Wumpus
+        print(f"[ENV_ADVANCED] Wumpus moved to: {new_positions}")
+
+        for (wx, wy) in new_positions:
+            self.grid[wy][wx].wumpus = True
+            for nx, ny in get_neighbors((wx, wy), self.size):
+                self.grid[ny][nx].stench = True
 
     def get_valid_wumpus_moves(self, x, y):
         candidates = []

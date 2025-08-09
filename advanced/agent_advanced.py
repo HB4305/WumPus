@@ -156,13 +156,33 @@ class AgentAdvanced:
             return "STUCK"
 
         # ---- SHOOT WUMPUS ----
+        # if self.has_arrow and percepts["stench"] and self.can_shoot_wumpus_safely():
+        #     target_dir = self.get_wumpus_direction()
+        #     if target_dir and self.direction != target_dir:
+        #         return self.turn_towards(target_dir)
+        #     result = self.env.shoot_arrow(self.direction)
+        #     self.has_arrow = False
+        #     self.point -= 10
+        #     if result["scream"]:
+        #         self.inference.remove_wumpus_after_kill((self.x, self.y), self.direction)
+        #         self.action_log.append("SHOOT_HIT")
+        #         self._increment_action()
+        #         return "SHOOT_HIT"
+        #     else:
+        #         self.action_log.append("SHOOT_MISS")
+        #         self._increment_action()
+        #         return "SHOOT_MISS"
         if self.has_arrow and percepts["stench"] and self.can_shoot_wumpus_safely():
             target_dir = self.get_wumpus_direction()
             if target_dir and self.direction != target_dir:
                 return self.turn_towards(target_dir)
-            result = self.env.shoot_arrow(self.direction)
+            result, eaten = self.env.shoot_arrow(self.direction)
             self.has_arrow = False
             self.point -= 10
+            if eaten:
+                self.dead = True
+                self.action_log.append("DIED_EATEN_BY_WUMPUS")
+                return "DIE"
             if result["scream"]:
                 self.inference.remove_wumpus_after_kill((self.x, self.y), self.direction)
                 self.action_log.append("SHOOT_HIT")
@@ -172,6 +192,7 @@ class AgentAdvanced:
                 self.action_log.append("SHOOT_MISS")
                 self._increment_action()
                 return "SHOOT_MISS"
+
 
         # ---- MOVE TO SAFE NEIGHBOR ----
         safe_neighbors = self.get_truly_safe_neighbors()

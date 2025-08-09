@@ -162,6 +162,10 @@ class Environment:
             return {"escaped": True, "has_gold": self.gold_collected}
         return {"escaped": False}
 
+    # Mới thêm
+    def is_valid(self, pos):
+        x, y = pos
+        return 0 <= x < self.size and 0 <= y < self.size
 
     def is_terminal(self):
         return self.agent_escaped or (self.grid[self.agent_pos[1]][self.agent_pos[0]].wumpus or self.grid[self.agent_pos[1]][self.agent_pos[0]].pit)
