@@ -21,6 +21,7 @@ class Agent:
         dirs = ["NORTH", "WEST", "SOUTH", "EAST"]
         idx = dirs.index(self.direction)
         self.direction = dirs[(idx + 1) % 4]
+        print(f"[AGENT] Turned left to {self.direction}")
         self.action_log.append("TURN_LEFT")
         return "TURN_LEFT"
 
@@ -28,6 +29,7 @@ class Agent:
         dirs = ["NORTH", "EAST", "SOUTH", "WEST"]
         idx = dirs.index(self.direction)
         self.direction = dirs[(idx + 1) % 4]
+        print(f"[AGENT] Turned right to {self.direction}")
         self.action_log.append("TURN_RIGHT")
         return "TURN_RIGHT"
 
@@ -128,7 +130,7 @@ class Agent:
             target_dir = self.get_wumpus_direction()
             if target_dir and self.direction != target_dir:
                 return self.turn_towards(target_dir)  # xoay trước khi bắn
-            result = self.env.shoot_arrow()
+            result = self.env.shoot_arrow(self.direction)
             self.has_arrow = False
             self.point -= 10
             if result["scream"]:

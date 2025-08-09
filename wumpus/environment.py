@@ -106,7 +106,7 @@ class Environment:
     #     elif direction == "RIGHT":
     #         self.agent_dir = dirs[(idx + 1) % 4]
 
-    def shoot_arrow(self):
+    def shoot_arrow(self, direction):
         print("[ENV] Agent shoots an arrow")
         if not self.arrow_available:
             return {"scream": False, **self.get_percepts()}
@@ -117,7 +117,7 @@ class Environment:
             "EAST": (1, 0),
             "SOUTH": (0, -1),
             "WEST": (-1, 0)
-        }[self.agent_dir]
+        }[direction]
 
         scream = False
         while self.in_bounds(x + dx, y + dy):
