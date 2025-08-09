@@ -186,7 +186,7 @@ class ImageElement:
         
         # Agent is always shown on top if present
         if 'A' in element:
-            self.showAgent(y, x, self.h)
+            self.showAgent(i, j, self.h)
     
     # Show images
     def showAgent(self, i, j, h):
