@@ -208,16 +208,6 @@ class ImageElement:
         # Then overlay the scream image on top
         self.screen.blit(self.scream_img, (BOARD_APPEEAR_WIDTH + j*self.cell_side, BOARD_APPEEAR_HEIGHT + (h - 1 - i)*self.cell_side))
     
-    def showPoisonousGas(self, i, j, h):
-        self.screen.blit(self.poisonous_gas_img, (BOARD_APPEEAR_WIDTH + j*self.cell_side, BOARD_APPEEAR_HEIGHT + (h - 1 - i)*self.cell_side))
-    def showWhiff(self, i, j, h):
-        self.screen.blit(self.whiff_img, (BOARD_APPEEAR_WIDTH + j*self.cell_side, BOARD_APPEEAR_HEIGHT + (h - 1 - i)*self.cell_side))
-    
-    def showHealingPotion(self, i, j, h):
-        self.screen.blit(self.healing_potion_img, (BOARD_APPEEAR_WIDTH + j*self.cell_side, BOARD_APPEEAR_HEIGHT + (h - 1 - i)*self.cell_side))
-    def showGlow(self, i, j, h):
-        self.screen.blit(self.glow_img, (BOARD_APPEEAR_WIDTH + j*self.cell_side, BOARD_APPEEAR_HEIGHT + (h - 1 - i)*self.cell_side))
-    
     def showPit(self, i, j, h):
         self.screen.blit(self.pit_img, (BOARD_APPEEAR_WIDTH + j*self.cell_side, BOARD_APPEEAR_HEIGHT + (h - 1 - i)*self.cell_side))
     def showBreeze(self, i, j, h):
@@ -334,8 +324,6 @@ class Map(ImageElement):
             element = self.map_data[y][x][0] if len(self.map_data[y][x]) > 0 else ''
             stench = self.map_data[y][x][1] if len(self.map_data[y][x]) > 1 else False
             breeze = self.map_data[y][x][2] if len(self.map_data[y][x]) > 2 else False
-            whiff = self.map_data[y][x][3] if len(self.map_data[y][x]) > 3 else False
-            glow = self.map_data[y][x][4] if len(self.map_data[y][x]) > 4 else False
             scream = self.map_data[y][x][5] if len(self.map_data[y][x]) > 5 else False
         else:
             # Handle Cell objects from environment
@@ -352,8 +340,6 @@ class Map(ImageElement):
                 
             stench = getattr(cell, 'stench', False)
             breeze = getattr(cell, 'breeze', False)
-            whiff = getattr(cell, 'whiff', False)
-            glow = getattr(cell, 'glitter', False)
             scream = getattr(cell, 'scream', False)
         
         # Show main elements first (highest priority)
@@ -365,22 +351,15 @@ class Map(ImageElement):
         elif 'P' in element and 'P_G' not in element:
             self.showPit(y, x, self.h)
             main_element_shown = True
-        elif 'P_G' in element:
-            self.showPoisonousGas(y, x, self.h)
-            main_element_shown = True
+
         elif 'G' in element:
             self.showGold(y, x, self.h)
-            main_element_shown = True
-        elif 'H_P' in element:
-            self.showHealingPotion(y, x, self.h)
             main_element_shown = True
         
         # Handle effects - show base effect and overlays
         if not main_element_shown:
             # No main elements - show effects as primary display
-            if glow:  # Glitter has highest priority among effects
-                self.showGlow(y, x, self.h)
-            elif stench and not breeze:  # Only stench
+            if stench and not breeze:  # Only stench
                 self.showStench(y, x, self.h)
             elif breeze and not stench:  # Only breeze
                 self.showBreeze(y, x, self.h)
@@ -389,8 +368,6 @@ class Map(ImageElement):
                 breeze_overlay = self.breeze_img.copy()
                 breeze_overlay.set_alpha(150)  # Semi-transparent overlay
                 self.screen.blit(breeze_overlay, (BOARD_APPEEAR_WIDTH + x*self.cell_side, BOARD_APPEEAR_HEIGHT + (self.h - 1 - y)*self.cell_side))
-            elif whiff:
-                self.showWhiff(y, x, self.h)
         else:
             # Main element present - show effects as overlays
             overlay_alpha = 120

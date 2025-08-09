@@ -106,7 +106,7 @@ def showMenu():
             result = inputForm()
             if result is not None:  # Only return if we got valid input
                 return result
-            # return (3, 0.2, 2)
+            # return (8, 0.2, 2)
             ##############################################
             # If result is None, continue the menu loop
         elif choose_option == 1:  # Quit
