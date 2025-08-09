@@ -124,7 +124,10 @@ class AgentAdvanced:
         # ---- GRAB GOLD ----
         if percepts["glitter"] and not self.has_gold:
             self.has_gold = True
-            self.env.grab_gold()
+            result = self.env.grab_gold()
+            if result.get("eaten", False):
+                self.dead = True
+                return "DIE"
             self.action_log.append("GRAB")
             self.point += 10
             self._increment_action()
@@ -133,17 +136,19 @@ class AgentAdvanced:
         # ---- CLIMB OUT ----
         if self.has_gold and (self.x, self.y) == (0, 0):
             result = self.env.climb_out()
+            if result.get("eaten", False):
+                self.dead = True
+                return "DIE"
             self.escaped = result["escaped"]
+            self.point += 1000
             self.action_log.append("CLIMB")
-            if self.escaped:
-                self.point += 1000
             self._increment_action()
             return "CLIMB"
 
         # ---- GO HOME WITH GOLD ----
         if self.has_gold:
             path_home = astar_search((self.x, self.y), (0, 0),
-                                     self.inference.is_safe, self.env.size)
+                                    self.inference.is_safe, self.env.size)
             if path_home:
                 next_pos = path_home[0]
                 target_dir = self.get_direction_to(next_pos)
@@ -156,33 +161,16 @@ class AgentAdvanced:
             return "STUCK"
 
         # ---- SHOOT WUMPUS ----
-        # if self.has_arrow and percepts["stench"] and self.can_shoot_wumpus_safely():
-        #     target_dir = self.get_wumpus_direction()
-        #     if target_dir and self.direction != target_dir:
-        #         return self.turn_towards(target_dir)
-        #     result = self.env.shoot_arrow(self.direction)
-        #     self.has_arrow = False
-        #     self.point -= 10
-        #     if result["scream"]:
-        #         self.inference.remove_wumpus_after_kill((self.x, self.y), self.direction)
-        #         self.action_log.append("SHOOT_HIT")
-        #         self._increment_action()
-        #         return "SHOOT_HIT"
-        #     else:
-        #         self.action_log.append("SHOOT_MISS")
-        #         self._increment_action()
-        #         return "SHOOT_MISS"
         if self.has_arrow and percepts["stench"] and self.can_shoot_wumpus_safely():
             target_dir = self.get_wumpus_direction()
             if target_dir and self.direction != target_dir:
                 return self.turn_towards(target_dir)
-            result, eaten = self.env.shoot_arrow(self.direction)
+            result = self.env.shoot_arrow(self.direction)
+            if result.get("eaten", False):
+                self.dead = True
+                return "DIE"
             self.has_arrow = False
             self.point -= 10
-            if eaten:
-                self.dead = True
-                self.action_log.append("DIED_EATEN_BY_WUMPUS")
-                return "DIE"
             if result["scream"]:
                 self.inference.remove_wumpus_after_kill((self.x, self.y), self.direction)
                 self.action_log.append("SHOOT_HIT")
@@ -192,7 +180,6 @@ class AgentAdvanced:
                 self.action_log.append("SHOOT_MISS")
                 self._increment_action()
                 return "SHOOT_MISS"
-
 
         # ---- MOVE TO SAFE NEIGHBOR ----
         safe_neighbors = self.get_truly_safe_neighbors()
@@ -204,12 +191,10 @@ class AgentAdvanced:
             self.move_to(best_neighbor)
             return "MOVE"
 
-        # Các phần còn lại giữ nguyên logic (explore, return home,...)
-
         # ---- RETURN HOME IF NOTHING ELSE ----
         if not self.has_gold and (self.x, self.y) != (0, 0):
             path_home = astar_search((self.x, self.y), (0, 0),
-                                     self.inference.is_safe, self.env.size)
+                                    self.inference.is_safe, self.env.size)
             if path_home:
                 target_dir = self.get_direction_to(path_home[0])
                 if self.direction != target_dir:
@@ -341,9 +326,14 @@ class AgentAdvanced:
         self.path.append(next_pos)
         
         result = self.env.move_agent(self.x, self.y)
+        if result.get("eaten", False):
+            self.dead = True
+            print(f"[AGENT_ADVANCED] Agent eaten by Wumpus while moving to {next_pos}")
+            return False
         self.action_log.append(f"MOVE to {next_pos}")
         self.point -= 1
         
+        self._increment_action()
         # Check for death after moving
         if self.check_death():
             self.dead = True

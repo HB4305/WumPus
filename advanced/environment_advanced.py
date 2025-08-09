@@ -16,35 +16,39 @@ class EnvironmentAdvanced(Environment):
             if (self.agent_x, self.agent_y) in self.wumpus_positions:
                 return True
         return False
-
     def move_agent(self, x, y):
-        self.agent_x, self.agent_y = x, y  # Lưu vị trí agent trong môi trường
+        self.agent_x, self.agent_y = x, y
         result = super().move_agent(x, y)
         eaten = self._increment_action_and_move_wumpus()
         if eaten:
             print("[ENV_ADVANCED] Agent bị Wumpus ăn khi Wumpus di chuyển!")
-        return result, eaten
+            result["eaten"] = True  # Add eaten flag to result dict
+        return result  # Return single dict instead of tuple
 
     def shoot_arrow(self, direction):
         result = super().shoot_arrow(direction)
         eaten = self._increment_action_and_move_wumpus()
         if eaten:
             print("[ENV_ADVANCED] Agent bị Wumpus ăn khi Wumpus di chuyển!")
-        return result, eaten
+            result["eaten"] = True
+        return result
 
     def grab_gold(self):
         result = super().grab_gold()
         eaten = self._increment_action_and_move_wumpus()
         if eaten:
             print("[ENV_ADVANCED] Agent bị Wumpus ăn khi Wumpus di chuyển!")
-        return result, eaten
+            result["eaten"] = True
+        return result
 
     def climb_out(self):
         result = super().climb_out()
         eaten = self._increment_action_and_move_wumpus()
         if eaten:
             print("[ENV_ADVANCED] Agent bị Wumpus ăn khi Wumpus di chuyển!")
-        return result, eaten
+            result["eaten"] = True
+        return result
+    
 
     def turn_agent(self, *args, **kwargs):
         result = super().turn_agent(*args, **kwargs)
