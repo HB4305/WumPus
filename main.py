@@ -41,90 +41,93 @@ def main():
     if config is None:
         return
 
-    size, pit_prob, wumpus_count = config
+    size, pit_prob, wumpus_count, game_mode = config  # Updated to unpack 4 values
+    if game_mode == 0:
+        # Create environment and agent
+        env = Environment(size=size, k=wumpus_count, pit_prob=pit_prob)
+        inference = Inference(size, env)
+        agent = Agent(env, inference)
+        # Xuất bản đồ vào file trong folder input
+        # Debug: In nội dung env.grid
+        print("Generated grid:", env.grid)
+        print("Grid type:", type(env.grid))
 
-    # Create environment and agent
-    env = Environment(size=size, k=wumpus_count, pit_prob=pit_prob)
-    inference = Inference(size, env)
-    agent = Agent(env, inference)
-
-    # Xuất bản đồ vào file trong folder input
-    # Debug: In nội dung env.grid
-    print("Generated grid:", env.grid)
-    print("Grid type:", type(env.grid))
-
-    write_map_to_file("input/wumpus_world_map.txt", env.grid)
+        write_map_to_file("input/wumpus_world_map.txt", env.grid)
 
 
-    print(
-        f"[MAIN] Created {size}x{size} world with {wumpus_count} Wumpus and {pit_prob} pit probability"
-    )
+        print(
+            f"[MAIN] Created {size}x{size} world with {wumpus_count} Wumpus and {pit_prob} pit probability"
+        )
+        print(f"[MAIN] Game Mode: {'Advanced' if game_mode == 1 else 'Normal'}")
 
-    # Show initial map
-    main_ui.showWumpusWorld(env.grid)
+        # Show initial map
+        main_ui.showWumpusWorld(env.grid)
 
-    # Store map states for UI
-    MAPS = []
-    MAPS.append(copy.deepcopy(env.grid))
+        # Store map states for UI
+        MAPS = []
+        MAPS.append(copy.deepcopy(env.grid))
 
-    # Agent action results
-    RESULT = []
-    MAX_STEPS = size * size * 4  # More reasonable step limit
-    step_count = 0
+        # Agent action results
+        RESULT = []
+        MAX_STEPS = size * size * 4  # More reasonable step limit
+        step_count = 0
 
-    # Main game loop
-    while not agent.finished() and step_count < MAX_STEPS:
-        print(f"\n=== STEP {step_count + 1} ===")
-        print(f"Agent at ({agent.x}, {agent.y})")
-        
-        # Check current cell for dangers (debug info)
-        current_cell = env.grid[agent.y][agent.x]
-        if current_cell.wumpus:
-            print(f"[MAIN] WARNING: Agent is on Wumpus cell!")
-        if current_cell.pit:
-            print(f"[MAIN] WARNING: Agent is on Pit cell!")
+        # Main game loop
+        while not agent.finished() and step_count < MAX_STEPS:
+            print(f"\n=== STEP {step_count + 1} ===")
+            print(f"Agent at ({agent.x}, {agent.y})")
+            
+            # Check current cell for dangers (debug info)
+            current_cell = env.grid[agent.y][agent.x]
+            if current_cell.wumpus:
+                print(f"[MAIN] WARNING: Agent is on Wumpus cell!")
+            if current_cell.pit:
+                print(f"[MAIN] WARNING: Agent is on Pit cell!")
 
-        action = agent.step()
-        step_count += 1
+            action = agent.step()
+            step_count += 1
 
-        # Record result với điểm số hiện tại của agent
-        RESULT.append(((agent.x, agent.y), action, agent.point))
-        
-        # Ensure we capture the updated map state after an action
-        # This is especially important after shooting a wumpus
-        if action == "SHOOT_HIT":
-            print("[MAIN] Wumpus killed! Updating environment...")
-            # Give a small pause to ensure environment is fully updated
-            # Then capture the updated state without the wumpus
-            MAPS.append(copy.deepcopy(env.grid))
-        else:
-            MAPS.append(copy.deepcopy(env.grid))
+            # Record result với điểm số hiện tại của agent
+            RESULT.append(((agent.x, agent.y), action, agent.point))
+            
+            # Ensure we capture the updated map state after an action
+            # This is especially important after shooting a wumpus
+            if action == "SHOOT_HIT":
+                print("[MAIN] Wumpus killed! Updating environment...")
+                # Give a small pause to ensure environment is fully updated
+                # Then capture the updated state without the wumpus
+                MAPS.append(copy.deepcopy(env.grid))
+            else:
+                MAPS.append(copy.deepcopy(env.grid))
 
-        print(f"[MAIN] Step {step_count}: {action}, Score: {agent.point}")
+            print(f"[MAIN] Step {step_count}: {action}, Score: {agent.point}")
 
-        # Check terminal conditions
-        if action == "DIE" or agent.dead:
-            print("[MAIN] Agent died!")
-            break
-        elif action == "CLIMB":
-            print("[MAIN] Agent successfully escaped!")
-            break
-        elif action == "STAY":
-            print("[MAIN] Agent has no safe moves")
-            break
+            # Check terminal conditions
+            if action == "DIE" or agent.dead:
+                print("[MAIN] Agent died!")
+                break
+            elif action == "CLIMB":
+                print("[MAIN] Agent successfully escaped!")
+                break
+            elif action == "STAY":
+                print("[MAIN] Agent has no safe moves")
+                break
 
-    # Show agent movement
-    main_ui.showAgentMove(None, RESULT, MAPS, None, agent.point)
+        # Show agent movement
+        main_ui.showAgentMove(None, RESULT, MAPS, None, agent.point)
 
-    # Write output
-    write_output(file_path="output/result.txt", agent=agent, RES=RESULT)
+        # Write output
+        write_output(file_path="output/result.txt", agent=agent, RES=RESULT)
 
-    print(f"\n=== FINAL RESULTS ===")
-    print(f"Steps taken: {step_count}")
-    print(f"Final score: {agent.point}")
-    print(f"Gold collected: {agent.has_gold}")
-    print(f"Agent escaped: {agent.finished()}")
-    print(f"Agent died: {agent.dead}")
+        print(f"\n=== FINAL RESULTS ===")
+        print(f"Steps taken: {step_count}")
+        print(f"Final score: {agent.point}")
+        print(f"Gold collected: {agent.has_gold}")
+        print(f"Agent escaped: {agent.finished()}")
+        print(f"Agent died: {agent.dead}")
+    else:
+        # Game mode 1 (Advanced)
+        pass
 
 
 if __name__ == "__main__":

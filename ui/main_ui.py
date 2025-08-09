@@ -13,6 +13,10 @@ def inputForm():
     font = pygame.font.Font(FONT_TYPE, FONT_MEDIUM)    
     clock = pygame.time.Clock()
 
+    # Add game mode selection
+    game_mode = 0  # Default to Normal mode (0)
+    mode_labels = ["Normal", "Advanced"]
+    
     input_boxes = [
         {"label": "Enter map size:", "value": "", "type": "int"},
         {"label": "Enter pit probability:", "value": "", "type": "float"},
@@ -22,19 +26,32 @@ def inputForm():
 
     while True:
         showMenuBackground(screen)
+        
+        
+        # Draw mode buttons horizontally
+        button_width = 250
+        button_spacing = 50  # Increased from 20 to 50 for more spacing
+        for i, mode in enumerate(mode_labels):
+            button_color = DARK_RED_COLOR if i == game_mode else WHITE_COLOR
+            button_rect = pygame.Rect(100 + i * (button_width + button_spacing), 120, button_width, 40)
+            pygame.draw.rect(screen, button_color, button_rect, 2)
+            mode_text = font.render(mode, True, button_color)
+            text_rect = mode_text.get_rect(center=button_rect.center)
+            screen.blit(mode_text, text_rect)
 
+        # Draw input boxes
         for i, box in enumerate(input_boxes):
             label_color = DARK_RED_COLOR if i == active_box else WHITE_COLOR
             label_surface = font.render(box["label"], True, label_color)
             value_surface = font.render(box["value"], True, label_color)
 
-            y = 150 + i * 100
+            y = 200 + i * 100  # Adjusted y position to make room for game mode selection
             screen.blit(label_surface, (100, y))
             screen.blit(value_surface, (100 + label_surface.get_width() + 20, y))
 
         small_font = pygame.font.Font(FONT_TYPE, FONT_MEDIUM_SMALL)
         instructions = small_font.render(
-            "Up/Down: Navigate  |  Enter: Confirm  |  Esc: Back to Menu", True, WHITE_COLOR
+            "Enter: Confirm | Esc: Back to Menu", True, WHITE_COLOR
         )
         screen.blit(instructions, (100, 500))
 
@@ -55,6 +72,12 @@ def inputForm():
 
                 elif event.key == pygame.K_DOWN:
                     active_box = (active_box + 1) % len(input_boxes)
+                    
+                elif event.key == pygame.K_LEFT:
+                    game_mode = 0  # Normal mode
+                
+                elif event.key == pygame.K_RIGHT:
+                    game_mode = 1  # Advanced mode
 
                 elif event.key == pygame.K_BACKSPACE:
                     input_boxes[active_box]["value"] = input_boxes[active_box]["value"][:-1]
@@ -66,7 +89,8 @@ def inputForm():
                             size = int(input_boxes[0]["value"])
                             prob = float(input_boxes[1]["value"])
                             wumpus = int(input_boxes[2]["value"])
-                            return size, prob, wumpus
+                            # Return game mode (0 or 1) along with other parameters
+                            return size, prob, wumpus, game_mode
                         except:
                             pass
 
