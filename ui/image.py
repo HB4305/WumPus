@@ -136,16 +136,57 @@ class ImageElement:
             breeze = getattr(cell_data, 'breeze', False)
         
         # Show faded main elements
+        main_element_shown = False
+        
         if 'W' in element:
             self.screen.blit(self.faded_wumpus_img, (BOARD_APPEEAR_WIDTH + j*self.cell_side, BOARD_APPEEAR_HEIGHT + (h - 1 - i)*self.cell_side))
+            main_element_shown = True
         elif 'P' in element:
             self.screen.blit(self.faded_pit_img, (BOARD_APPEEAR_WIDTH + j*self.cell_side, BOARD_APPEEAR_HEIGHT + (h - 1 - i)*self.cell_side))
+            main_element_shown = True
         
-        # Show faded effects
-        if stench and 'W' not in element:
-            self.screen.blit(self.faded_stench_img, (BOARD_APPEEAR_WIDTH + j*self.cell_side, BOARD_APPEEAR_HEIGHT + (h - 1 - i)*self.cell_side))
-        elif breeze and 'P' not in element:
-            self.screen.blit(self.faded_breeze_img, (BOARD_APPEEAR_WIDTH + j*self.cell_side, BOARD_APPEEAR_HEIGHT + (h - 1 - i)*self.cell_side))
+        # Handle faded effects
+        if not main_element_shown:
+            # No main elements - show effects as primary faded display
+            if stench and not breeze:  # Only stench
+                self.screen.blit(self.faded_stench_img, (BOARD_APPEEAR_WIDTH + j*self.cell_side, BOARD_APPEEAR_HEIGHT + (h - 1 - i)*self.cell_side))
+            elif breeze and not stench:  # Only breeze
+                self.screen.blit(self.faded_breeze_img, (BOARD_APPEEAR_WIDTH + j*self.cell_side, BOARD_APPEEAR_HEIGHT + (h - 1 - i)*self.cell_side))
+            elif stench and breeze:  # Both effects - show stench as base, breeze as overlay
+                self.screen.blit(self.faded_stench_img, (BOARD_APPEEAR_WIDTH + j*self.cell_side, BOARD_APPEEAR_HEIGHT + (h - 1 - i)*self.cell_side))
+                faded_breeze_overlay = self.faded_breeze_img.copy()
+                faded_breeze_overlay.set_alpha(50)  # Even more faded for overlay
+                self.screen.blit(faded_breeze_overlay, (BOARD_APPEEAR_WIDTH + j*self.cell_side, BOARD_APPEEAR_HEIGHT + (h - 1 - i)*self.cell_side))
+        else:
+            # Main element present - show effects as faded overlays
+            overlay_alpha = 40
+            
+            # Show faded stench overlay if present (and not from same cell's Wumpus)
+            if stench and 'W' not in element:
+                faded_stench_overlay = self.faded_stench_img.copy()
+                faded_stench_overlay.set_alpha(overlay_alpha)
+                self.screen.blit(faded_stench_overlay, (BOARD_APPEEAR_WIDTH + j*self.cell_side, BOARD_APPEEAR_HEIGHT + (h - 1 - i)*self.cell_side))
+            
+            # Show faded breeze overlay if present (and not from same cell's pit)
+            if breeze and 'P' not in element:
+                faded_breeze_overlay = self.faded_breeze_img.copy()
+                faded_breeze_overlay.set_alpha(overlay_alpha)
+                self.screen.blit(faded_breeze_overlay, (BOARD_APPEEAR_WIDTH + j*self.cell_side, BOARD_APPEEAR_HEIGHT + (h - 1 - i)*self.cell_side))
+            
+            # If cell has Wumpus and breeze, or pit and stench, show both faded
+            if 'W' in element and breeze:
+                faded_breeze_overlay = self.faded_breeze_img.copy()
+                faded_breeze_overlay.set_alpha(overlay_alpha)
+                self.screen.blit(faded_breeze_overlay, (BOARD_APPEEAR_WIDTH + j*self.cell_side, BOARD_APPEEAR_HEIGHT + (h - 1 - i)*self.cell_side))
+            
+            if 'P' in element and stench:
+                faded_stench_overlay = self.faded_stench_img.copy()
+                faded_stench_overlay.set_alpha(overlay_alpha)
+                self.screen.blit(faded_stench_overlay, (BOARD_APPEEAR_WIDTH + j*self.cell_side, BOARD_APPEEAR_HEIGHT + (h - 1 - i)*self.cell_side))
+        
+        # Agent is always shown on top if present
+        if 'A' in element:
+            self.showAgent(y, x, self.h)
     
     # Show images
     def showAgent(self, i, j, h):
@@ -166,16 +207,6 @@ class ImageElement:
         self.showEmpty(i, j, h)
         # Then overlay the scream image on top
         self.screen.blit(self.scream_img, (BOARD_APPEEAR_WIDTH + j*self.cell_side, BOARD_APPEEAR_HEIGHT + (h - 1 - i)*self.cell_side))
-    
-    def showPoisonousGas(self, i, j, h):
-        self.screen.blit(self.poisonous_gas_img, (BOARD_APPEEAR_WIDTH + j*self.cell_side, BOARD_APPEEAR_HEIGHT + (h - 1 - i)*self.cell_side))
-    def showWhiff(self, i, j, h):
-        self.screen.blit(self.whiff_img, (BOARD_APPEEAR_WIDTH + j*self.cell_side, BOARD_APPEEAR_HEIGHT + (h - 1 - i)*self.cell_side))
-    
-    def showHealingPotion(self, i, j, h):
-        self.screen.blit(self.healing_potion_img, (BOARD_APPEEAR_WIDTH + j*self.cell_side, BOARD_APPEEAR_HEIGHT + (h - 1 - i)*self.cell_side))
-    def showGlow(self, i, j, h):
-        self.screen.blit(self.glow_img, (BOARD_APPEEAR_WIDTH + j*self.cell_side, BOARD_APPEEAR_HEIGHT + (h - 1 - i)*self.cell_side))
     
     def showPit(self, i, j, h):
         self.screen.blit(self.pit_img, (BOARD_APPEEAR_WIDTH + j*self.cell_side, BOARD_APPEEAR_HEIGHT + (h - 1 - i)*self.cell_side))
@@ -293,8 +324,6 @@ class Map(ImageElement):
             element = self.map_data[y][x][0] if len(self.map_data[y][x]) > 0 else ''
             stench = self.map_data[y][x][1] if len(self.map_data[y][x]) > 1 else False
             breeze = self.map_data[y][x][2] if len(self.map_data[y][x]) > 2 else False
-            whiff = self.map_data[y][x][3] if len(self.map_data[y][x]) > 3 else False
-            glow = self.map_data[y][x][4] if len(self.map_data[y][x]) > 4 else False
             scream = self.map_data[y][x][5] if len(self.map_data[y][x]) > 5 else False
         else:
             # Handle Cell objects from environment
@@ -311,39 +340,60 @@ class Map(ImageElement):
                 
             stench = getattr(cell, 'stench', False)
             breeze = getattr(cell, 'breeze', False)
-            whiff = getattr(cell, 'whiff', False)
-            glow = getattr(cell, 'glitter', False)
             scream = getattr(cell, 'scream', False)
         
-        # Check if cell has main elements (priority items)
-        has_main_element = ('W' in element or 'P' in element or 'G' in element or 
-                           'P_G' in element or 'H_P' in element)
+        # Show main elements first (highest priority)
+        main_element_shown = False
         
-        # Show main elements first (highest priority) - but don't show dead Wumpus
         if 'W' in element:
             self.showWumpus(y, x, self.h)
+            main_element_shown = True
         elif 'P' in element and 'P_G' not in element:
             self.showPit(y, x, self.h)
-        elif 'P_G' in element:
-            self.showPoisonousGas(y, x, self.h)
+            main_element_shown = True
+
         elif 'G' in element:
             self.showGold(y, x, self.h)
-        elif 'H_P' in element:
-            self.showHealingPotion(y, x, self.h)
-        else:
-            # Only show effects if there are no main elements
-            # Show effects with proper priority
-            if glow:  # Glitter has highest priority among effects
-                self.showGlow(y, x, self.h)
-            elif stench:
-                self.showStench(y, x, self.h)
-            elif breeze:
-                self.showBreeze(y, x, self.h)
-            elif whiff:
-                self.showWhiff(y, x, self.h)
+            main_element_shown = True
         
-        # Show scream as temporary overlay (but don't persist it)
-        # Scream should be handled separately as a temporary effect
+        # Handle effects - show base effect and overlays
+        if not main_element_shown:
+            # No main elements - show effects as primary display
+            if stench and not breeze:  # Only stench
+                self.showStench(y, x, self.h)
+            elif breeze and not stench:  # Only breeze
+                self.showBreeze(y, x, self.h)
+            elif stench and breeze:  # Both effects - show stench as base, breeze as overlay
+                self.showStench(y, x, self.h)
+                breeze_overlay = self.breeze_img.copy()
+                breeze_overlay.set_alpha(150)  # Semi-transparent overlay
+                self.screen.blit(breeze_overlay, (BOARD_APPEEAR_WIDTH + x*self.cell_side, BOARD_APPEEAR_HEIGHT + (self.h - 1 - y)*self.cell_side))
+        else:
+            # Main element present - show effects as overlays
+            overlay_alpha = 120
+            
+            # Show stench overlay if present (and not from the same cell's Wumpus)
+            if stench and 'W' not in element:
+                stench_overlay = self.stench_img.copy()
+                stench_overlay.set_alpha(overlay_alpha)
+                self.screen.blit(stench_overlay, (BOARD_APPEEAR_WIDTH + x*self.cell_side, BOARD_APPEEAR_HEIGHT + (self.h - 1 - y)*self.cell_side))
+            
+            # Show breeze overlay if present (and not from the same cell's pit)
+            if breeze and 'P' not in element:
+                breeze_overlay = self.breeze_img.copy()
+                breeze_overlay.set_alpha(overlay_alpha)
+                self.screen.blit(breeze_overlay, (BOARD_APPEEAR_WIDTH + x*self.cell_side, BOARD_APPEEAR_HEIGHT + (self.h - 1 - y)*self.cell_side))
+            
+            # If cell has both Wumpus and breeze, or pit and stench, show both
+            if 'W' in element and breeze:
+                breeze_overlay = self.breeze_img.copy()
+                breeze_overlay.set_alpha(overlay_alpha)
+                self.screen.blit(breeze_overlay, (BOARD_APPEEAR_WIDTH + x*self.cell_side, BOARD_APPEEAR_HEIGHT + (self.h - 1 - y)*self.cell_side))
+            
+            if 'P' in element and stench:
+                stench_overlay = self.stench_img.copy()
+                stench_overlay.set_alpha(overlay_alpha)
+                self.screen.blit(stench_overlay, (BOARD_APPEEAR_WIDTH + x*self.cell_side, BOARD_APPEEAR_HEIGHT + (self.h - 1 - y)*self.cell_side))
         
         # Agent is always shown on top if present
         if 'A' in element:

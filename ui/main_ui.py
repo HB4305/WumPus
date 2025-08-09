@@ -106,7 +106,7 @@ def showMenu():
             result = inputForm()
             if result is not None:  # Only return if we got valid input
                 return result
-            # return (3, 0.2, 2)
+            # return (8, 0.2, 2)
             ##############################################
             # If result is None, continue the menu loop
         elif choose_option == 1:  # Quit
@@ -179,9 +179,9 @@ def showAgentMove(_, path, maps_data, __, agent_point):
                 if element == '':
                     element = '-'
                 
-                # Only show stench/breeze as effects if the cell doesn't have main elements
-                stench = getattr(cell, 'stench', False) and not (has_wumpus or has_pit or has_gold)
-                breeze = getattr(cell, 'breeze', False) and not (has_wumpus or has_pit or has_gold)
+                # Always show stench and breeze when they exist, regardless of main elements
+                stench = getattr(cell, 'stench', False)
+                breeze = getattr(cell, 'breeze', False)
                 
                 cell_data = [
                     element,

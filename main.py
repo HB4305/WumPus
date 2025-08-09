@@ -13,7 +13,7 @@ def write_output(file_path, agent, RES):
         f.write(f"Total steps: {len(RES)}\n\n")
         f.write("Action log:\n")
 
-        for step, (pos, action, point, hp, potion) in enumerate(RES, 1):
+        for step, (pos, action, point) in enumerate(RES, 1):
             f.write(f"Step {step:>2}: Pos {pos} - Action: {action:<15} | Point: {point}\n")
 
 import os
@@ -69,7 +69,7 @@ def main():
 
     # Agent action results
     RESULT = []
-    MAX_STEPS = size * size * 2  # More reasonable step limit
+    MAX_STEPS = size * size * 4  # More reasonable step limit
     step_count = 0
 
     # Main game loop
@@ -88,8 +88,7 @@ def main():
         step_count += 1
 
         # Record result với điểm số hiện tại của agent
-        hp = 0 if (action == "DIE" or agent.dead) else 100
-        RESULT.append(((agent.x, agent.y), action, agent.point, hp, 0))
+        RESULT.append(((agent.x, agent.y), action, agent.point))
         
         # Ensure we capture the updated map state after an action
         # This is especially important after shooting a wumpus
