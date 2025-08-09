@@ -6,7 +6,7 @@ SHOW_NOTI_HEIGHT = WINDOW_HEIGHT - 90
 
 # FONTS
 
-FONT_TYPE = 'ui/fonts/gomarice_no_continue.ttf'
+FONT_TYPE = 'ui/fonts/MTO Astro City.ttf'
 FONT_SMALL = 16
 FONT_MEDIUM_SMALL = 32
 FONT_MEDIUM = 48

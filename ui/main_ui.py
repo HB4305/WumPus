@@ -576,7 +576,7 @@ pygame.display.set_caption('WumPus Game')
 
 def inputForm():
     pygame.font.init()
-    font = pygame.font.SysFont(FONT_TYPE, FONT_LARGE, bold=True)
+    font = pygame.font.Font(FONT_TYPE, FONT_MEDIUM)       # Dùng font từ file
     clock = pygame.time.Clock()
 
     input_boxes = [
@@ -592,14 +592,16 @@ def inputForm():
         for i, box in enumerate(input_boxes):
             label_color = DARK_RED_COLOR if i == active_box else WHITE_COLOR
             label_surface = font.render(box["label"], True, label_color)
-            value_surface = font.render(box["value"], True, WHITE_COLOR)
+            value_surface = font.render(box["value"], True, label_color)
 
             y = 150 + i * 100
             screen.blit(label_surface, (100, y))
             screen.blit(value_surface, (100 + label_surface.get_width() + 20, y))
 
-        small_font = pygame.font.SysFont(FONT_TYPE, FONT_MEDIUM)
-        instructions = small_font.render("Up/Down: Navigate  |  Enter: Confirm  |  Esc: Back to Menu", True, WHITE_COLOR)
+        small_font = pygame.font.Font(FONT_TYPE, FONT_MEDIUM_SMALL)   # Font nhỏ cũng từ file
+        instructions = small_font.render(
+            "Up/Down: Navigate  |  Enter: Confirm  |  Esc: Back to Menu", True, WHITE_COLOR
+        )
         screen.blit(instructions, (100, 500))
 
         pygame.display.flip()
@@ -630,7 +632,6 @@ def inputForm():
                             size = int(input_boxes[0]["value"])
                             prob = float(input_boxes[1]["value"])
                             wumpus = int(input_boxes[2]["value"])
-                            
                             return size, prob, wumpus
                         except:
                             pass
@@ -638,6 +639,7 @@ def inputForm():
                 else:
                     if event.unicode.isprintable():
                         input_boxes[active_box]["value"] += event.unicode
+
 
 def showMenu():
     showMenuBackground(screen)
@@ -777,8 +779,8 @@ def showAgentMove(_, path, maps_data, __, agent_point):
         """Hiển thị thông tin action hiện tại và direction"""
         action_font = pygame.font.Font(FONT_TYPE, FONT_MEDIUM_SMALL)
         
-        action_x = 870
-        action_y = 160
+        action_x = 860
+        action_y = 150
         
         # Hiển thị current action - màu đỏ
         action_text = f"Action: {current_action}"
@@ -788,13 +790,17 @@ def showAgentMove(_, path, maps_data, __, agent_point):
         # Hiển thị current direction - màu đỏ
         direction_text = f"Facing: {current_direction}"
         direction_surface = action_font.render(direction_text, True, DARK_RED_COLOR)
-        screen.blit(direction_surface, (action_x, action_y + 25))
+        screen.blit(direction_surface, (action_x, action_y + 30))
         
         # Hiển thị thông tin về gold - màu đỏ
         gold_status = "YES" if has_gold else "NO"
         gold_text = f"Has Gold: {gold_status}"
         gold_surface = action_font.render(gold_text, True, DARK_RED_COLOR)
-        screen.blit(gold_surface, (action_x, action_y + 50))
+        screen.blit(gold_surface, (action_x, action_y + 60))
+        
+        # Show current step info above buttons
+        step_info = button_font.render(f"Step: {current_step}/{len(path)}", True, DARK_RED_COLOR)
+        screen.blit(step_info, (action_x, action_y + 90))
         
     def draw_buttons():
         # Auto Play button
@@ -825,9 +831,7 @@ def showAgentMove(_, path, maps_data, __, agent_point):
         text_rect = exit_text.get_rect(center=exit_button_rect.center)
         screen.blit(exit_text, text_rect)
                 
-        # Show current step info above buttons
-        step_info = button_font.render(f"Step: {current_step}/{len(path)}", True, DARK_RED_COLOR)
-        screen.blit(step_info, (base_x, base_y - 30))
+        
 
     def execute_step():
         nonlocal current_step, direction, current_score, count_map, killed_wumpus_positions, current_direction, current_action, has_gold

@@ -58,7 +58,7 @@ class Info(Text_Display):
         # score = self.agent.point
         ####
         self.write_text_content("Score: ", self.left_margin, 100, text_color=DARK_RED_COLOR)
-        self.write_text_content(f"{score}", self.left_margin+155, 100, text_color=DARK_RED_COLOR)
+        self.write_text_content(f"{score}", self.left_margin+170, 100, text_color=DARK_RED_COLOR)
 
     def showLeftBar(self, choose_map_result, score=0):
         area = (self.left_margin-20, 0, WINDOW_WIDTH-(self.left_margin-20), SHOW_NOTI_HEIGHT)
