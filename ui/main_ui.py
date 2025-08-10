@@ -127,10 +127,10 @@ def showMenu():
         choose_option = menu.get_option_result()
 
         if choose_option == 0:  # Play
-            result = inputForm()
-            if result is not None:  # Only return if we got valid input
-                return result
-            # return (8, 0.2, 2, 1)
+            # result = inputForm()
+            # if result is not None:  # Only return if we got valid input
+            #     return result
+            return (8, 0.2, 2, 1)
         elif choose_option == 1:  # Quit
             pygame.quit()
             sys.exit()

@@ -135,6 +135,8 @@ def main():
         inference = InferenceAdvanced(size, env)
         agent = AgentAdvanced(env, inference)
         
+        write_map_to_file("input/wumpus_world_map_advanced.txt", env.grid)
+        
         print(f"[MAIN] Created {size}x{size} world with {wumpus_count} Wumpus and {pit_prob} pit probability")
         print(f"[MAIN] Game Mode: Advanced")
 

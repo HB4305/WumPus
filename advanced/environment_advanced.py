@@ -13,6 +13,7 @@ class EnvironmentAdvanced(Environment):
         if self.action_count % 5 == 0:
             self.move_wumpuses()
             # Trả về True nếu agent bị Wumpus ăn
+            print(f"[ENV_ADVANCED] Action count {self.action_count}: Moving Wumpuses...")
             if (self.agent_x, self.agent_y) in self.wumpus_positions:
                 return True
         return False
@@ -58,29 +59,57 @@ class EnvironmentAdvanced(Environment):
         return result, eaten
 
     def move_wumpuses(self):
-        new_positions = []
+         # Xoá Wumpus cũ từ grid trước
         for (wx, wy) in self.wumpus_positions:
+            if 0 <= wx < self.size and 0 <= wy < self.size:
+                self.grid[wy][wx].wumpus = False
+                print(f"[ENV_ADVANCED] Removed Wumpus from ({wx}, {wy})")
+        
+                # Xóa tất cả stench cũ trước khi tính toán lại
+        for y in range(self.size):
+            for x in range(self.size):
+                self.grid[y][x].stench = False
+        
+        
+        new_positions = []
+        for i, (wx, wy) in enumerate(self.wumpus_positions):
             neighbors = self.get_valid_wumpus_moves(wx, wy)
             if neighbors:
                 chosen_pos = random.choice(neighbors)
+                print(f"[ENV_ADVANCED] Wumpus {i} moved from ({wx}, {wy}) to {chosen_pos}")
             else:
                 chosen_pos = (wx, wy)
+                print(f"[ENV_ADVANCED] Wumpus {i} stayed at ({wx}, {wy}) - no valid moves")
             new_positions.append(chosen_pos)
-        
-        # Xoá stench cũ 
-        for (wx, wy) in self.wumpus_positions:
-            for nx, ny in get_neighbors((wx, wy), self.size):
-                self.grid[ny][nx].stench = False
+        # # Xoá stench cũ 
+        # for (wx, wy) in self.wumpus_positions:
+        #     for nx, ny in get_neighbors((wx, wy), self.size):
+        #         self.grid[ny][nx].stench = False
 
         self.wumpus_positions = new_positions
 
         # In ra vị trí mới của Wumpus
         print(f"[ENV_ADVANCED] Wumpus moved to: {new_positions}")
 
+        # for (wx, wy) in new_positions:
+        #     self.grid[wy][wx].wumpus = True
+        #     for nx, ny in get_neighbors((wx, wy), self.size):
+        #         self.grid[ny][nx].stench = True
         for (wx, wy) in new_positions:
-            self.grid[wy][wx].wumpus = True
-            for nx, ny in get_neighbors((wx, wy), self.size):
-                self.grid[ny][nx].stench = True
+            if 0 <= wx < self.size and 0 <= wy < self.size:
+                self.grid[wy][wx].wumpus = True
+                for nx, ny in get_neighbors((wx, wy), self.size):
+                    if 0 <= nx < self.size and 0 <= ny < self.size:
+                        self.grid[ny][nx].stench = True
+                        
+        print("[ENV_ADVANCED] Grid state after Wumpus movement:")
+        for y in range(self.size):
+            for x in range(self.size):
+                cell = self.grid[y][x]
+                if cell.wumpus:
+                    print(f"  Wumpus at ({x}, {y})")
+                if cell.stench:
+                    print(f"  Stench at ({x}, {y})")
 
     def get_valid_wumpus_moves(self, x, y):
         candidates = []
