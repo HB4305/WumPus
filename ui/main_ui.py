@@ -544,8 +544,24 @@ def showAgentMove(_, path, maps_data, __, list_env):
             current_action = "DIED"
             M2.showDie(y, x, M2.h)
         
+        # Handle final step
+        if current_step >= len(path):
+            final_action = path[-1][1]
+            final_died = len(path[-1]) > 3 and path[-1][3] == 0
+            final_x, final_y = path[-1][0]
+
+            if final_died:
+                M2.showPath(final_x, final_y)
+                M2.showDie(final_y, final_x, M2.h)
+            elif final_action == 'Climb' and final_x == 0 and final_y == 0:
+                M2.showPath(final_x, final_y)
+            else:
+                M2.showPath(final_x, final_y)
+        
         # Kiểm tra cập nhật môi trường từ list_env
+        
         if list_env and count_action % 5 == 1 and count_action // 5 >= 1 and index_env < len(env_maps):
+            print(index_env)
             maps[count_map] = env_maps[index_env]
             index_env += 1
             M2.updateMap(maps[count_map])
@@ -560,20 +576,6 @@ def showAgentMove(_, path, maps_data, __, list_env):
 
         I2.showLeftBar(map_size, score=current_score)
         current_step += 1
-        
-        # Handle final step
-        if current_step >= len(path):
-            final_action = path[-1][1]
-            final_died = len(path[-1]) > 3 and path[-1][3] == 0
-            final_x, final_y = path[-1][0]
-
-            if final_died:
-                M2.showPath(final_x, final_y)
-                M2.showDie(final_y, final_x, M2.h)
-            elif final_action == 'Climb' and final_x == 0 and final_y == 0:
-                M2.showPath(final_x, final_y)
-            else:
-                M2.showPath(final_x, final_y)
         
         return True
 

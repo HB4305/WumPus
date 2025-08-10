@@ -167,14 +167,16 @@ def main():
                 list_env.append(copy.deepcopy(env.grid))
 
             print(f"[MAIN] Step {step_count}: {action}, Score: {agent.point}")
-
             if action == "DIE" or agent.dead:
+                list_env.append(copy.deepcopy(env.grid))
                 print("[MAIN] Agent died!")
                 break
             elif action == "CLIMB":
+                list_env.append(copy.deepcopy(env.grid))
                 print("[MAIN] Agent successfully escaped!")
                 break
             elif action == "STAY":
+                list_env.append(copy.deepcopy(env.grid))
                 print("[MAIN] Agent has no safe moves")
                 break
         print(len(list_env))
