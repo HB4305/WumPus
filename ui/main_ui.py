@@ -130,10 +130,6 @@ def showMenu():
             result = inputForm()
             if result is not None:  # Only return if we got valid input
                 return result
-<<<<<<< HEAD
-            # return (8, 0.2, 2, 1)
-=======
->>>>>>> 8b5341ae908c834c7c4e56dfaff562827bf2c828
         elif choose_option == 1:  # Quit
             pygame.quit()
             sys.exit()
