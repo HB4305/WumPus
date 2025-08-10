@@ -268,7 +268,7 @@ class EnvironmentAdvanced(Environment):
     #     return False
     def register_action(self):
         self.action_count += 1
-        if self.action_count % 5 == 0:
+        if self.action_count % 5 == 1 and self.action_count / 5 > 1:
             self.move_wumpuses()
     # def move_agent(self, x, y):
     #     self.agent_x, self.agent_y = x, y
