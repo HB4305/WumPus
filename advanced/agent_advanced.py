@@ -15,12 +15,13 @@ class AgentAdvanced:
         self.action_log = []
         self.escaped = False
         self.dead = False
-        self.action_counter = 0  # Đếm tổng số hành động agent đã làm
+        # self.action_counter = 0  # Đếm tổng số hành động agent đã làm
 
     def _increment_action(self):
-        self.action_counter += 1
+        # self.action_counter += 1
+        self.env.register_action()
         # Mỗi 5 hành động, gọi inference xử lý di chuyển Wumpus
-        if self.action_counter % 5 == 0:
+        if self.env.action_count % 5 == 0:
             try:
                 self.inference.update_wumpus_positions_after_move((self.x, self.y))
             except Exception as e:
@@ -130,7 +131,7 @@ class AgentAdvanced:
                 return "DIE"
             self.action_log.append("GRAB")
             self.point += 10
-            self._increment_action()
+            # self._increment_action()
             return "GRAB"
 
         # ---- CLIMB OUT ----
@@ -142,7 +143,7 @@ class AgentAdvanced:
             self.escaped = result["escaped"]
             self.point += 1000
             self.action_log.append("CLIMB")
-            self._increment_action()
+            # self._increment_action()
             return "CLIMB"
 
         # ---- GO HOME WITH GOLD ----
@@ -174,11 +175,11 @@ class AgentAdvanced:
             if result["scream"]:
                 self.inference.remove_wumpus_after_kill((self.x, self.y), self.direction)
                 self.action_log.append("SHOOT_HIT")
-                self._increment_action()
+                # self._increment_action()
                 return "SHOOT_HIT"
             else:
                 self.action_log.append("SHOOT_MISS")
-                self._increment_action()
+                # self._increment_action()
                 return "SHOOT_MISS"
 
         # ---- MOVE TO SAFE NEIGHBOR ----

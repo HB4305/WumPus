@@ -6,7 +6,7 @@ import copy
 from advanced.agent_advanced import AgentAdvanced
 from advanced.inference_advanced import InferenceAdvanced
 from advanced.environment_advanced import EnvironmentAdvanced
-
+import os
 
 def write_output(file_path, agent, RES):
     with open(file_path, "w", encoding="utf-8") as f:
@@ -19,7 +19,6 @@ def write_output(file_path, agent, RES):
         for step, (pos, action, point) in enumerate(RES, 1):
             f.write(f"Step {step:>2}: Pos {pos} - Action: {action:<15} | Point: {point}\n")
 
-import os
 def write_map_to_file(file_path, grid):
     try:
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
@@ -177,6 +176,8 @@ def main():
                 break
 
         main_ui.showAgentMove(None, RESULT, MAPS, None, agent.point)
+        
+        write_map_to_file("output/wumpus_world_map_advanced.txt", env.grid)
         write_output(file_path="output/result.txt", agent=agent, RES=RESULT)
 
         print(f"\n=== FINAL RESULTS ===")

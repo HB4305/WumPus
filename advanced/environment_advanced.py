@@ -8,27 +8,32 @@ class EnvironmentAdvanced(Environment):
         self.action_count = 0
         # Giả sử self.wumpus_positions = [(x1,y1), (x2,y2), ...]
     
-    def _increment_action_and_move_wumpus(self):
+    # def _increment_action_and_move_wumpus(self):
+    #     # self.action_count += 1
+    #     if self.action_count % 5 == 0:
+    #         self.move_wumpuses()
+    #         # Trả về True nếu agent bị Wumpus ăn
+    #         print(f"[ENV_ADVANCED] Action count {self.action_count}: Moving Wumpuses...")
+    #         # if (self.agent_x, self.agent_y) in self.wumpus_positions:
+    #         if self.agent_pos in self.wumpus_positions:
+    #             return True
+    #     return False
+    def register_action(self):
         self.action_count += 1
         if self.action_count % 5 == 0:
             self.move_wumpuses()
-            # Trả về True nếu agent bị Wumpus ăn
-            print(f"[ENV_ADVANCED] Action count {self.action_count}: Moving Wumpuses...")
-            if (self.agent_x, self.agent_y) in self.wumpus_positions:
-                return True
-        return False
-    def move_agent(self, x, y):
-        self.agent_x, self.agent_y = x, y
-        result = super().move_agent(x, y)
-        eaten = self._increment_action_and_move_wumpus()
-        if eaten:
-            print("[ENV_ADVANCED] Agent bị Wumpus ăn khi Wumpus di chuyển!")
-            result["eaten"] = True  # Add eaten flag to result dict
-        return result  # Return single dict instead of tuple
+    # def move_agent(self, x, y):
+    #     self.agent_x, self.agent_y = x, y
+    #     result = super().move_agent(x, y)
+    #     eaten = self._increment_action_and_move_wumpus()
+    #     if eaten:
+    #         print("[ENV_ADVANCED] Agent bị Wumpus ăn khi Wumpus di chuyển!")
+    #         result["eaten"] = True  # Add eaten flag to result dict
+    #     return result  # Return single dict instead of tuple
 
     def shoot_arrow(self, direction):
         result = super().shoot_arrow(direction)
-        eaten = self._increment_action_and_move_wumpus()
+        eaten = self.register_action()
         if eaten:
             print("[ENV_ADVANCED] Agent bị Wumpus ăn khi Wumpus di chuyển!")
             result["eaten"] = True
@@ -36,7 +41,7 @@ class EnvironmentAdvanced(Environment):
 
     def grab_gold(self):
         result = super().grab_gold()
-        eaten = self._increment_action_and_move_wumpus()
+        eaten = self.register_action()
         if eaten:
             print("[ENV_ADVANCED] Agent bị Wumpus ăn khi Wumpus di chuyển!")
             result["eaten"] = True
@@ -44,7 +49,7 @@ class EnvironmentAdvanced(Environment):
 
     def climb_out(self):
         result = super().climb_out()
-        eaten = self._increment_action_and_move_wumpus()
+        eaten = self.register_action()
         if eaten:
             print("[ENV_ADVANCED] Agent bị Wumpus ăn khi Wumpus di chuyển!")
             result["eaten"] = True
@@ -53,7 +58,7 @@ class EnvironmentAdvanced(Environment):
 
     def turn_agent(self, *args, **kwargs):
         result = super().turn_agent(*args, **kwargs)
-        eaten = self._increment_action_and_move_wumpus()
+        eaten = self.register_action()
         if eaten:
             print("[ENV_ADVANCED] Agent bị Wumpus ăn khi Wumpus di chuyển!")
         return result, eaten
