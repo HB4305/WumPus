@@ -116,7 +116,7 @@ def main():
                 break
 
         # Show agent movement
-        main_ui.showAgentMove(None, RESULT, MAPS, None, agent.point)
+        main_ui.showAgentMove(None, RESULT, MAPS, None, None)
 
         # Write output
         write_output(file_path="output/result.txt", agent=agent, RES=RESULT)
@@ -146,6 +146,7 @@ def main():
         RESULT = []
         MAX_STEPS = size * size * 4
         step_count = 0
+        list_env = []
 
         while not agent.finished() and step_count < MAX_STEPS:
             print(f"\n=== STEP {step_count + 1} ===")
@@ -162,6 +163,8 @@ def main():
 
             RESULT.append(((agent.x, agent.y), action, agent.point))
             MAPS.append(copy.deepcopy(env.grid))
+            if step_count % 5 == 0 and step_count // 5 > 1:
+                list_env.append(copy.deepcopy(env.grid))
 
             print(f"[MAIN] Step {step_count}: {action}, Score: {agent.point}")
 
@@ -174,9 +177,9 @@ def main():
             elif action == "STAY":
                 print("[MAIN] Agent has no safe moves")
                 break
+        print(len(list_env))
+        main_ui.showAgentMove(None, RESULT, MAPS, None, list_env)
 
-        main_ui.showAgentMove(None, RESULT, MAPS, None, agent.point)
-        
         write_map_to_file("output/wumpus_world_map_advanced.txt", env.grid)
         write_output(file_path="output/result.txt", agent=agent, RES=RESULT)
 

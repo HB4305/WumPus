@@ -146,7 +146,7 @@ def showWumpusWorld(map_data):
     I1.showLeftBar(map_size, score=0)
     pygame.display.update()
 
-def showAgentMove(_, path, maps_data, __, agent_point):
+def showAgentMove(_, path, maps_data, __, list_env):
     I2 = Info(screen, level=1)
     current_direction = "EAST"
     direction = 1
@@ -157,7 +157,11 @@ def showAgentMove(_, path, maps_data, __, agent_point):
     auto_play_timer = 0
     selected_button = 0
     current_action = "START"
-    
+    index_env = 0
+    count_action = 0
+    # Lưu trữ lịch sử vị trí của agent
+    visited_positions = set([(0, 0)])  # Bắt đầu từ vị trí (0,0)
+
     # Button setup
     button_font = pygame.font.Font(FONT_TYPE, FONT_MEDIUM_SMALL)
     button_width = 120
@@ -207,6 +211,43 @@ def showAgentMove(_, path, maps_data, __, agent_point):
                 map_row.append(cell_data)
             map_layer.append(map_row)
         maps.append(map_layer)
+
+    # Convert list_env to expected format (nếu list_env không rỗng)
+    env_maps = []
+    if list_env:
+        for env_grid in list_env:
+            env_layer = []
+            for row in env_grid:
+                env_row = []
+                for cell in row:
+                    has_wumpus = getattr(cell, 'wumpus', False)
+                    has_pit = getattr(cell, 'pit', False) 
+                    has_gold = getattr(cell, 'gold', False)
+                    
+                    element = ''
+                    if has_wumpus:
+                        element += 'W'
+                    if has_pit:
+                        element += 'P'
+                    if has_gold:
+                        element += 'G'
+                    if element == '':
+                        element = '-'
+                    
+                    stench = getattr(cell, 'stench', False)
+                    breeze = getattr(cell, 'breeze', False)
+                    
+                    cell_data = [
+                        element,
+                        stench,
+                        breeze,
+                        False,
+                        getattr(cell, 'glitter', False),
+                        False
+                    ]
+                    env_row.append(cell_data)
+                env_layer.append(env_row)
+            env_maps.append(env_layer)
 
     # Store original maps for reset functionality
     original_maps = []
@@ -287,12 +328,10 @@ def showAgentMove(_, path, maps_data, __, agent_point):
         exit_text = button_font.render("Exit", True, exit_color)
         text_rect = exit_text.get_rect(center=exit_button_rect.center)
         screen.blit(exit_text, text_rect)
-                
-        
 
     def execute_step():
-        nonlocal current_step, direction, current_score, count_map, killed_wumpus_positions, current_direction, current_action, has_gold
-        
+        nonlocal current_step, direction, current_score, count_map, killed_wumpus_positions, current_direction, current_action, has_gold, count_action, index_env
+
         if current_step >= len(path):
             return False
             
@@ -309,6 +348,9 @@ def showAgentMove(_, path, maps_data, __, agent_point):
         action = path[i][1]
         current_action = action
         
+        # Cập nhật tập hợp các vị trí đã đi qua
+        visited_positions.add((x, y))
+        
         if len(path[i]) > 2:
             current_score = path[i][2]
 
@@ -322,7 +364,10 @@ def showAgentMove(_, path, maps_data, __, agent_point):
         M2.showPath(x, y)
         M2.showAgent(y, x, M2.h)
 
+        
+
         if action == 'Turn Left' or action == 'TURN_LEFT':
+            count_action += 1
             current_action = "TURN LEFT"
             direction = M2.turnLeft(direction)
             dirs = ["NORTH", "WEST", "SOUTH", "EAST"]
@@ -331,6 +376,7 @@ def showAgentMove(_, path, maps_data, __, agent_point):
             M2.showAgent(y, x, M2.h)
 
         elif action == 'Turn Right' or action == 'TURN_RIGHT':
+            count_action += 1
             current_action = "TURN RIGHT"
             direction = M2.turnRight(direction)
             dirs = ["NORTH", "EAST", "SOUTH", "WEST"]
@@ -339,9 +385,11 @@ def showAgentMove(_, path, maps_data, __, agent_point):
             M2.showAgent(y, x, M2.h)
 
         elif action == 'Move' or action == 'MOVE':
+            count_action += 1
             current_action = "MOVE FORWARD"
 
         elif action == 'Grab Gold' or action == 'GRAB':
+            count_action += 1
             current_action = "GRAB GOLD"
             has_gold = True
             M2.showGold(y, x, M2.h)
@@ -350,9 +398,11 @@ def showAgentMove(_, path, maps_data, __, agent_point):
                 count_map += 1
 
         elif action == 'Climb' or action == 'CLIMB':
+            count_action += 1
             current_action = "CLIMB OUT"
 
         elif action == 'Shoot' or action == 'SHOOT_HIT' or action == 'SHOOT_MISS':
+            count_action += 1
             if action == 'SHOOT_HIT':
                 current_action = "SHOOT (HIT)"
             elif action == 'SHOOT_MISS':
@@ -369,12 +419,6 @@ def showAgentMove(_, path, maps_data, __, agent_point):
             }.get(current_direction, (1, 0))
             
             # Track visited cells up to current step
-            visited_cells = set()
-            for step_idx in range(current_step + 1):
-                step_x, step_y = path[step_idx][0]
-                visited_cells.add((step_x, step_y))
-            
-            # Animate arrow movement
             arrow_x, arrow_y = x, y
             hit_target = False
             arrow_path = []
@@ -405,7 +449,7 @@ def showAgentMove(_, path, maps_data, __, agent_point):
                         hit_target = True
                         break
                 
-                if (arrow_x, arrow_y) in visited_cells:
+                if (arrow_x, arrow_y) in visited_positions:
                     M2.showPath(arrow_x, arrow_y)
                 else:
                     if (arrow_y < len(maps[count_map]) and 
@@ -472,13 +516,6 @@ def showAgentMove(_, path, maps_data, __, agent_point):
                 showGameBackground(screen, level=1)
                 M2.showUnknownBoard()
                 
-                visited_positions = set()
-                visited_positions.add((0, 0))  
-                
-                for step_idx in range(current_step + 1):  
-                    step_x, step_y = path[step_idx][0]
-                    visited_positions.add((step_x, step_y))
-                
                 for pos_x, pos_y in visited_positions:
                     M2.showPath(pos_x, pos_y)
                 
@@ -492,7 +529,7 @@ def showAgentMove(_, path, maps_data, __, agent_point):
             
             else:
                 for arr_x, arr_y in arrow_path:
-                    if (arr_x, arr_y) in visited_cells:
+                    if (arr_x, arr_y) in visited_positions:
                         M2.showPath(arr_x, arr_y)
                     else:
                         if (arr_y < len(maps[count_map]) and 
@@ -503,8 +540,23 @@ def showAgentMove(_, path, maps_data, __, agent_point):
                 pygame.time.wait(200)
 
         elif action == 'DIE':
+            count_action += 1
             current_action = "DIED"
             M2.showDie(y, x, M2.h)
+        
+        # Kiểm tra cập nhật môi trường từ list_env
+        if list_env and count_action % 5 == 1 and count_action // 5 >= 1 and index_env < len(env_maps):
+            maps[count_map] = env_maps[index_env]
+            index_env += 1
+            M2.updateMap(maps[count_map])
+            showGameBackground(screen, level=1)
+            M2.showUnknownBoard()
+            for pos_x, pos_y in visited_positions:
+                M2.showPath(pos_x, pos_y)
+            for kx, ky in killed_wumpus_positions:
+                if 0 <= kx < map_size and 0 <= ky < map_size:
+                    M2.showEmpty(ky, kx, M2.h)
+            M2.showAgent(y, x, M2.h)
 
         I2.showLeftBar(map_size, score=current_score)
         current_step += 1
@@ -516,14 +568,11 @@ def showAgentMove(_, path, maps_data, __, agent_point):
             final_x, final_y = path[-1][0]
 
             if final_died:
-                # Agent died from Wumpus or Pit
                 M2.showPath(final_x, final_y)
                 M2.showDie(final_y, final_x, M2.h)
             elif final_action == 'Climb' and final_x == 0 and final_y == 0:
-                # Agent successfully climbed out at (0,0) with gold
                 M2.showPath(final_x, final_y)
             else:
-                # Agent ran out of moves or couldn't complete the mission
                 M2.showPath(final_x, final_y)
         
         return True
@@ -553,7 +602,10 @@ def showAgentMove(_, path, maps_data, __, agent_point):
                         current_score = 0
                         has_gold = False
                         count_map = 0
+                        index_env = 0
+                        count_action = 0
                         killed_wumpus_positions.clear()
+                        visited_positions = set([(0, 0)])  # Reset visited positions
                         
                         maps = []
                         for map_layer in original_maps:
