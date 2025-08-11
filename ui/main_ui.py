@@ -678,6 +678,11 @@ def showAgentMove(_, path, maps_data, __, list_env):
                 if current_step >= len(path):
                     auto_play = False
 
+
+
+
+
+
         # Draw everything
         draw_action_info()
         draw_buttons()
