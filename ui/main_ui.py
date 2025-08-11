@@ -13,56 +13,70 @@ def inputForm():
     font = pygame.font.Font(FONT_TYPE, FONT_MEDIUM)    
     clock = pygame.time.Clock()
 
-    # Add game mode selection
-    game_mode = 0  # Default to Normal mode (0)
     mode_labels = ["Normal", "Advanced"]
-    
-      # Default values
-    default_values = ["8", "0.2", "2"]
-    
+    agent_labels = ["Single Agent", "Double Agent"]
+
     input_boxes = [
         {"label": "Enter map size (default: 8):", "value": "", "type": "int", "default": "8"},
         {"label": "Enter pit probability (default: 0.2):", "value": "", "type": "float", "default": "0.2"},
         {"label": "Enter number of Wumpus (default: 2):", "value": "", "type": "int", "default": "2"},
     ]
-    
-    active_box = 0
+
+    # State
+    game_mode = 0
+    agent_mode = 0
+    active_box = 0  # 0: mode, 1: agent, 2+: input_boxes
+
+    total_lines = 2 + len(input_boxes)  # 2 lựa chọn + 3 input
 
     while True:
         showMenuBackground(screen)
-        
-        
-        # Draw mode buttons horizontally
-        button_width = 250
-        button_spacing = 50  # Increased from 20 to 50 for more spacing
+
+        y_start = 120
+        y_step = 70
+
+        # Draw game mode line
+        label_color = DARK_RED_COLOR if active_box == 0 else WHITE_COLOR
+        label_surface = font.render("Game Mode:", True, label_color)
+        screen.blit(label_surface, (100, y_start))
+        # Draw buttons
         for i, mode in enumerate(mode_labels):
-            button_color = DARK_RED_COLOR if i == game_mode else WHITE_COLOR
-            button_rect = pygame.Rect(100 + i * (button_width + button_spacing), 120, button_width, 40)
-            pygame.draw.rect(screen, button_color, button_rect, 2)
-            mode_text = font.render(mode, True, button_color)
-            text_rect = mode_text.get_rect(center=button_rect.center)
-            screen.blit(mode_text, text_rect)
+            btn_color = DARK_RED_COLOR if game_mode == i else WHITE_COLOR
+            btn_rect = pygame.Rect(410 + i*260, y_start, 240, 50)
+            pygame.draw.rect(screen, btn_color, btn_rect, 2)
+            btn_text = font.render(mode, True, btn_color)
+            text_rect = btn_text.get_rect(center=btn_rect.center)
+            screen.blit(btn_text, text_rect)
+
+        label_color = DARK_RED_COLOR if active_box == 1 else WHITE_COLOR
+        label_surface = font.render("Agent Mode:", True, label_color)
+        screen.blit(label_surface, (100, y_start + y_step))
+        for i, agent in enumerate(agent_labels):
+            btn_color = DARK_RED_COLOR if agent_mode == i else WHITE_COLOR
+            btn_rect = pygame.Rect(410 + i*360, y_start + y_step, 350, 50)
+            pygame.draw.rect(screen, btn_color, btn_rect, 2)
+            btn_text = font.render(agent, True, btn_color)
+            text_rect = btn_text.get_rect(center=btn_rect.center)
+            screen.blit(btn_text, text_rect)
 
         # Draw input boxes
         for i, box in enumerate(input_boxes):
-            label_color = DARK_RED_COLOR if i == active_box else WHITE_COLOR
+            idx = i + 2
+            label_color = DARK_RED_COLOR if active_box == idx else WHITE_COLOR
             label_surface = font.render(box["label"], True, label_color)
-            value_surface = font.render(box["value"], True, label_color)
-
-            # Show current value or placeholder
             display_value = box["value"] if box["value"] else f"[{box['default']}]"
-            value_color = label_color if box["value"] else (128, 128, 128)  # Gray for placeholder
+            value_color = label_color if box["value"] else (128, 128, 128)
             value_surface = font.render(display_value, True, value_color)
-
-            y = 200 + i * 100  # Adjusted y position to make room for game mode selection
+            y = y_start + y_step * (idx)
             screen.blit(label_surface, (100, y))
             screen.blit(value_surface, (100 + label_surface.get_width() + 20, y))
 
+        # Instructions
         small_font = pygame.font.Font(FONT_TYPE, FONT_MEDIUM_SMALL)
         instructions = small_font.render(
-            "Enter: Confirm | Esc: Back to Menu", True, WHITE_COLOR
+            "Up/down: Move | Left/right: Change | Enter: Confirm | Esc: Back", True, WHITE_COLOR
         )
-        screen.blit(instructions, (100, 500))
+        screen.blit(instructions, (100, 550))
 
         pygame.display.flip()
         clock.tick(30)
@@ -77,63 +91,58 @@ def inputForm():
                     return None
 
                 elif event.key == pygame.K_UP:
-                    active_box = (active_box - 1) % len(input_boxes)
+                    active_box = (active_box - 1) % total_lines
 
                 elif event.key == pygame.K_DOWN:
-                    active_box = (active_box + 1) % len(input_boxes)
-                    
+                    active_box = (active_box + 1) % total_lines
+
                 elif event.key == pygame.K_LEFT:
-                    game_mode = 0  # Normal mode
-                
+                    if active_box == 0:
+                        game_mode = (game_mode - 1) % len(mode_labels)
+                    elif active_box == 1:
+                        agent_mode = (agent_mode - 1) % len(agent_labels)
+
                 elif event.key == pygame.K_RIGHT:
-                    game_mode = 1  # Advanced mode
+                    if active_box == 0:
+                        game_mode = (game_mode + 1) % len(mode_labels)
+                    elif active_box == 1:
+                        agent_mode = (agent_mode + 1) % len(agent_labels)
 
                 elif event.key == pygame.K_BACKSPACE:
-                    input_boxes[active_box]["value"] = input_boxes[active_box]["value"][:-1]
+                    if active_box >= 2:
+                        box = input_boxes[active_box - 2]
+                        box["value"] = box["value"][:-1]
 
                 elif event.key == pygame.K_RETURN:
-                #     all_filled = all(box["value"].strip() for box in input_boxes)
-                #     if all_filled:
-                #         try:
-                #             size = int(input_boxes[0]["value"])
-                #             prob = float(input_boxes[1]["value"])
-                #             wumpus = int(input_boxes[2]["value"])
-                #             # Return game mode (0 or 1) along with other parameters
-                #             return size, prob, wumpus, game_mode
-                #         except:
-                #             pass
-
-                # else:
-                #     if event.unicode.isprintable():
-                #         input_boxes[active_box]["value"] += event.unicode
+                    if active_box < 2:
+                        # Không làm gì khi Enter ở dòng chọn chế độ
+                        continue
                     try:
-                        # Use entered value or default value for each box
                         size_str = input_boxes[0]["value"] if input_boxes[0]["value"].strip() else input_boxes[0]["default"]
                         prob_str = input_boxes[1]["value"] if input_boxes[1]["value"].strip() else input_boxes[1]["default"]
                         wumpus_str = input_boxes[2]["value"] if input_boxes[2]["value"].strip() else input_boxes[2]["default"]
-                        
+
                         size = int(size_str)
                         prob = float(prob_str)
                         wumpus = int(wumpus_str)
-                        
-                        # Validate ranges
+
                         if size < 4 or size > 20:
-                            continue  # Invalid size, stay in loop
+                            continue
                         if prob < 0.0 or prob > 1.0:
-                            continue  # Invalid probability, stay in loop
+                            continue
                         if wumpus < 1 or wumpus > size * size // 4:
-                            continue  # Invalid wumpus count, stay in loop
-                        
-                        print(f"[INPUT] Using values: Size={size}, Pit Probability={prob}, Wumpus={wumpus}, Mode={game_mode}")
-                        return size, prob, wumpus, game_mode
-                        
+                            continue
+
+                        print(f"[INPUT] Using values: Size={size}, Pit Probability={prob}, Wumpus={wumpus}, Mode={game_mode}, Agent={agent_mode}")
+                        return size, prob, wumpus, game_mode, agent_mode
+
                     except ValueError:
-                        # If conversion fails, stay in the loop
                         continue
 
                 else:
-                    if event.unicode.isprintable():
-                        input_boxes[active_box]["value"] += event.unicode
+                    if active_box >= 2 and event.unicode.isprintable():
+                        box = input_boxes[active_box - 2]
+                        box["value"] += event.unicode
 
 def showMenu():
     showMenuBackground(screen)
@@ -182,7 +191,7 @@ def showWumpusWorld(map_data):
     I1.showLeftBar(map_size, score=0)
     pygame.display.update()
 
-def showAgentMove(_, path, maps_data, __, list_env):
+def showAgentMove(_, path, maps_data, __, list_env, agent_mode, agent_index=0):
     I2 = Info(screen, level=1)
     current_direction = "EAST"
     direction = 1
@@ -309,12 +318,18 @@ def showAgentMove(_, path, maps_data, __, list_env):
     M2.showAgent(0, 0, M2.h)
     I2.showLeftBar(map_size, score=0)
 
-    def draw_action_info():
+    def draw_action_info(agent_index):
         """Hiển thị thông tin action hiện tại và direction"""
         action_font = pygame.font.Font(FONT_TYPE, FONT_MEDIUM_SMALL)
         
         action_x = 860
         action_y = 150
+        
+        if agent_mode == 1:
+            agent_type = "A*" if agent_index == 0 else "DFS"
+            agent_text = f"Agent: {agent_type}"
+            agent_surface = action_font.render(agent_text, True, DARK_RED_COLOR)
+            screen.blit(agent_surface, (40, WINDOW_HEIGHT - 60))
         
         # Hiển thị current action - màu đỏ
         action_text = f"Action: {current_action}"
@@ -633,12 +648,30 @@ def showAgentMove(_, path, maps_data, __, list_env):
     # Main game loop
     clock = pygame.time.Clock()
     
+    # ...existing code...
     while True:
         for event in pygame.event.get():
             if event.type == QUIT:
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.KEYDOWN:
+                # Nếu là chế độ Double Agent, đang ở Auto Play hoặc Step, và nhấn Enter lần nữa thì dừng
+                if agent_mode == 1 and selected_button in [0, 1]:
+                    if event.key == pygame.K_RETURN or event.key == K_KP_ENTER:
+                        # Nếu đã hết path hoặc auto_play vừa kết thúc thì dừng luôn
+                        if (selected_button == 0 and (not auto_play) and current_step >= len(path)) or \
+                        (selected_button == 1 and current_step >= len(path)):
+                            return
+                        # Nếu chưa auto_play thì vẫn thực hiện như thường
+                        if selected_button == 0:  # Auto Play button
+                            auto_play = not auto_play
+                            auto_play_timer = 0
+                        elif selected_button == 1:  # Step button
+                            if not auto_play and current_step < len(path):
+                                execute_step()
+                        continue
+
+                # Các nút khác vẫn xử lý như cũ
                 if event.key == pygame.K_RETURN or event.key == K_KP_ENTER:
                     if selected_button == 0:  # Auto Play button
                         auto_play = not auto_play
@@ -697,7 +730,19 @@ def showAgentMove(_, path, maps_data, __, list_env):
 
 
         # Draw everything
-        draw_action_info()
+        draw_action_info(agent_index)
         draw_buttons()
+        if agent_mode == 1 and current_step >= len(path)  and agent_index == 0:
+            hint_font = pygame.font.Font(FONT_TYPE, FONT_MEDIUM_SMALL)
+            hint_text = "Press play or step again to move to the next agent."
+            hint_surface = hint_font.render(hint_text, True, (255, 215, 0))
+            text_width = hint_surface.get_width()
+            screen.blit(hint_surface, (WINDOW_WIDTH - text_width - 40, WINDOW_HEIGHT - 40))
+        elif agent_mode == 1 and current_step >= len(path) and agent_index == 1:
+            hint_font = pygame.font.Font(FONT_TYPE, FONT_MEDIUM_SMALL)
+            hint_text = "Press play or step or exit to exit."
+            hint_surface = hint_font.render(hint_text, True, (255, 215, 0))
+            text_width = hint_surface.get_width()
+            screen.blit(hint_surface, (WINDOW_WIDTH - text_width - 40, WINDOW_HEIGHT - 40))
         pygame.display.flip()
         clock.tick(60)
