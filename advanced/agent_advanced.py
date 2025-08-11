@@ -191,6 +191,24 @@ class AgentAdvanced:
                 return self.turn_towards(target_dir)
             self.move_to(best_neighbor)
             return "MOVE"
+        
+        # ---- MOVE TO SAFE UNVISITED ANYWHERE ----
+        safe_unvisited = [
+            pos for pos, info in self.inference.kb.items()
+            if info['safe'] and not info['visited']
+        ]
+        if safe_unvisited:
+            safe_unvisited.sort(key=lambda p: abs(p[0] - self.x) + abs(p[1] - self.y))
+            target = safe_unvisited[0]
+            path_to_target = astar_search((self.x, self.y), target,
+                                        self.inference.is_safe, self.env.size)
+            if path_to_target:
+                target_dir = self.get_direction_to(path_to_target[0])
+                if self.direction != target_dir:
+                    return self.turn_towards(target_dir)
+                if self.is_move_safe(path_to_target[0]):
+                    self.move_to(path_to_target[0])
+                    return "MOVE"
 
         # ---- RETURN HOME IF NOTHING ELSE ----
         if not self.has_gold and (self.x, self.y) != (0, 0):
