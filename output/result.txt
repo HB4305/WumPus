@@ -1,17 +1,49 @@
 == WUMPUS WORLD AGENT RESULT ==
 
-Final score: 1004
-Gold collected: Yes
-Total steps: 10
+Final score: -1034
+Gold collected: No
+Total steps: 42
 
 Action log:
 Step  1: Pos (1, 0) - Action: MOVE            | Point: -1
 Step  2: Pos (2, 0) - Action: MOVE            | Point: -2
 Step  3: Pos (3, 0) - Action: MOVE            | Point: -3
-Step  4: Pos (3, 0) - Action: GRAB            | Point: 7
-Step  5: Pos (3, 0) - Action: TURN_LEFT       | Point: 7
-Step  6: Pos (3, 0) - Action: TURN_LEFT       | Point: 7
-Step  7: Pos (2, 0) - Action: MOVE            | Point: 6
-Step  8: Pos (1, 0) - Action: MOVE            | Point: 5
-Step  9: Pos (0, 0) - Action: MOVE            | Point: 4
-Step 10: Pos (0, 0) - Action: CLIMB           | Point: 1004
+Step  4: Pos (4, 0) - Action: MOVE            | Point: -4
+Step  5: Pos (4, 0) - Action: TURN_LEFT       | Point: -4
+Step  6: Pos (4, 1) - Action: MOVE            | Point: -5
+Step  7: Pos (4, 1) - Action: TURN_LEFT       | Point: -5
+Step  8: Pos (3, 1) - Action: MOVE            | Point: -6
+Step  9: Pos (3, 1) - Action: TURN_RIGHT      | Point: -6
+Step 10: Pos (3, 2) - Action: MOVE            | Point: -7
+Step 11: Pos (3, 2) - Action: TURN_LEFT       | Point: -7
+Step 12: Pos (3, 2) - Action: TURN_LEFT       | Point: -7
+Step 13: Pos (3, 1) - Action: MOVE            | Point: -8
+Step 14: Pos (3, 0) - Action: MOVE            | Point: -9
+Step 15: Pos (3, 0) - Action: TURN_RIGHT      | Point: -9
+Step 16: Pos (2, 0) - Action: MOVE            | Point: -10
+Step 17: Pos (1, 0) - Action: MOVE            | Point: -11
+Step 18: Pos (1, 0) - Action: TURN_RIGHT      | Point: -11
+Step 19: Pos (1, 1) - Action: MOVE            | Point: -12
+Step 20: Pos (1, 2) - Action: MOVE            | Point: -13
+Step 21: Pos (1, 2) - Action: TURN_RIGHT      | Point: -13
+Step 22: Pos (2, 2) - Action: MOVE            | Point: -14
+Step 23: Pos (2, 2) - Action: TURN_LEFT       | Point: -14
+Step 24: Pos (2, 3) - Action: MOVE            | Point: -15
+Step 25: Pos (2, 3) - Action: TURN_RIGHT      | Point: -15
+Step 26: Pos (3, 3) - Action: MOVE            | Point: -16
+Step 27: Pos (4, 3) - Action: MOVE            | Point: -17
+Step 28: Pos (4, 3) - Action: TURN_LEFT       | Point: -17
+Step 29: Pos (4, 3) - Action: TURN_LEFT       | Point: -17
+Step 30: Pos (3, 3) - Action: MOVE            | Point: -18
+Step 31: Pos (3, 3) - Action: TURN_RIGHT      | Point: -18
+Step 32: Pos (3, 4) - Action: MOVE            | Point: -19
+Step 33: Pos (3, 4) - Action: TURN_RIGHT      | Point: -19
+Step 34: Pos (4, 4) - Action: MOVE            | Point: -20
+Step 35: Pos (5, 4) - Action: MOVE            | Point: -21
+Step 36: Pos (5, 4) - Action: SHOOT_MISS      | Point: -31
+Step 37: Pos (6, 4) - Action: MOVE            | Point: -32
+Step 38: Pos (6, 4) - Action: TURN_LEFT       | Point: -32
+Step 39: Pos (6, 4) - Action: TURN_LEFT       | Point: -32
+Step 40: Pos (5, 4) - Action: MOVE            | Point: -33
+Step 41: Pos (5, 4) - Action: TURN_LEFT       | Point: -33
+Step 42: Pos (5, 3) - Action: MOVE            | Point: -1034
