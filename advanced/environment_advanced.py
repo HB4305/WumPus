@@ -130,17 +130,14 @@ class EnvironmentAdvanced(Environment):
             position_counts[pos] = position_counts.get(pos, 0) + 1
         
         # Nếu có va chạm, giữ nguyên vị trí ban đầu
-        has_collision = any(count > 1 for count in position_counts.values())
-        if has_collision:
-            # Thông báo chi tiết về va chạm
-            for pos, count in position_counts.items():
-                if count > 1:
-                    wumpus_indices = [i for i, new_pos in enumerate(new_positions) if new_pos == pos]
-                    print(f"[ENV_ADVANCED] COLLISION DETECTED! {count} Wumpuses tried to move to position {pos}")
-                    print(f"[ENV_ADVANCED] Wumpuses involved: {wumpus_indices}")
-            
-            print("[ENV_ADVANCED] All Wumpuses stay in their original positions due to collision")
-            new_positions = self.wumpus_positions.copy()
+        position_counts = {}
+        for pos in new_positions:
+            position_counts[pos] = position_counts.get(pos, 0) + 1
+
+        for i, pos in enumerate(new_positions):
+            if position_counts[pos] > 1:
+                print(f"[ENV_ADVANCED] COLLISION: Wumpus {i} giữ nguyên vị trí cũ ({self.wumpus_positions[i]}) do va chạm tại {pos}")
+                new_positions[i] = self.wumpus_positions[i]
         
         self.wumpus_positions = new_positions
 
