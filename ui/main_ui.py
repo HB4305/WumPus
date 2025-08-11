@@ -17,11 +17,15 @@ def inputForm():
     game_mode = 0  # Default to Normal mode (0)
     mode_labels = ["Normal", "Advanced"]
     
+      # Default values
+    default_values = ["8", "0.2", "2"]
+    
     input_boxes = [
-        {"label": "Enter map size:", "value": "", "type": "int"},
-        {"label": "Enter pit probability:", "value": "", "type": "float"},
-        {"label": "Enter number of Wumpus:", "value": "", "type": "int"},
+        {"label": "Enter map size (default: 8):", "value": "", "type": "int", "default": "8"},
+        {"label": "Enter pit probability (default: 0.2):", "value": "", "type": "float", "default": "0.2"},
+        {"label": "Enter number of Wumpus (default: 2):", "value": "", "type": "int", "default": "2"},
     ]
+    
     active_box = 0
 
     while True:
@@ -44,6 +48,11 @@ def inputForm():
             label_color = DARK_RED_COLOR if i == active_box else WHITE_COLOR
             label_surface = font.render(box["label"], True, label_color)
             value_surface = font.render(box["value"], True, label_color)
+
+            # Show current value or placeholder
+            display_value = box["value"] if box["value"] else f"[{box['default']}]"
+            value_color = label_color if box["value"] else (128, 128, 128)  # Gray for placeholder
+            value_surface = font.render(display_value, True, value_color)
 
             y = 200 + i * 100  # Adjusted y position to make room for game mode selection
             screen.blit(label_surface, (100, y))
@@ -83,21 +92,48 @@ def inputForm():
                     input_boxes[active_box]["value"] = input_boxes[active_box]["value"][:-1]
 
                 elif event.key == pygame.K_RETURN:
-                    all_filled = all(box["value"].strip() for box in input_boxes)
-                    if all_filled:
-                        try:
-                            size = int(input_boxes[0]["value"])
-                            prob = float(input_boxes[1]["value"])
-                            wumpus = int(input_boxes[2]["value"])
-                            # Return game mode (0 or 1) along with other parameters
-                            return size, prob, wumpus, game_mode
-                        except:
-                            pass
+                #     all_filled = all(box["value"].strip() for box in input_boxes)
+                #     if all_filled:
+                #         try:
+                #             size = int(input_boxes[0]["value"])
+                #             prob = float(input_boxes[1]["value"])
+                #             wumpus = int(input_boxes[2]["value"])
+                #             # Return game mode (0 or 1) along with other parameters
+                #             return size, prob, wumpus, game_mode
+                #         except:
+                #             pass
+
+                # else:
+                #     if event.unicode.isprintable():
+                #         input_boxes[active_box]["value"] += event.unicode
+                    try:
+                        # Use entered value or default value for each box
+                        size_str = input_boxes[0]["value"] if input_boxes[0]["value"].strip() else input_boxes[0]["default"]
+                        prob_str = input_boxes[1]["value"] if input_boxes[1]["value"].strip() else input_boxes[1]["default"]
+                        wumpus_str = input_boxes[2]["value"] if input_boxes[2]["value"].strip() else input_boxes[2]["default"]
+                        
+                        size = int(size_str)
+                        prob = float(prob_str)
+                        wumpus = int(wumpus_str)
+                        
+                        # Validate ranges
+                        if size < 4 or size > 20:
+                            continue  # Invalid size, stay in loop
+                        if prob < 0.0 or prob > 1.0:
+                            continue  # Invalid probability, stay in loop
+                        if wumpus < 1 or wumpus > size * size // 4:
+                            continue  # Invalid wumpus count, stay in loop
+                        
+                        print(f"[INPUT] Using values: Size={size}, Pit Probability={prob}, Wumpus={wumpus}, Mode={game_mode}")
+                        return size, prob, wumpus, game_mode
+                        
+                    except ValueError:
+                        # If conversion fails, stay in the loop
+                        continue
 
                 else:
                     if event.unicode.isprintable():
                         input_boxes[active_box]["value"] += event.unicode
-
 
 def showMenu():
     showMenuBackground(screen)
