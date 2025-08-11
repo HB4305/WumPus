@@ -1,14 +1,7 @@
-from .utils_random import get_neighbors
 from .planner_random import dfs_search
-import random
+from .utils_random import get_neighbors
 
 class AgentRandom:
-    """
-    Agent DFS random — dựa trên file agent gốc của bạn nhưng đổi chiến lược thăm:
-    - Dùng DFS (stack = self.path) để khám phá
-    - Randomize thứ tự neighbors để hành vi "đi đại"
-    - Giữ nguyên logic grab/shoot/climb và update inference
-    """
     def __init__(self, env, inference):
         self.env = env
         self.inference = inference
@@ -17,23 +10,17 @@ class AgentRandom:
         self.has_gold = False
         self.has_arrow = True
         self.point = 0
-        # path dùng như stack: path[-1] == current
         self.path = [(0, 0)]
-        self.visited = set([(0, 0)])
         self.action_log = []
         self.escaped = False
         self.dead = False
-        # tránh back-and-forth bằng prev_pos
-        self.prev_pos = None
-        self.plan = []
-
-    # ======== HÀM XOAY ======== #
+    
+   # ======== HÀM XOAY ======== #
     def turn_left(self):
         dirs = ["NORTH", "WEST", "SOUTH", "EAST"]
         idx = dirs.index(self.direction)
         self.direction = dirs[(idx + 1) % 4]
-        # optional debug print
-        # print(f"[AGENT] Turned left to {self.direction}")
+        print(f"[AGENT] Turned left to {self.direction}")
         self.action_log.append("TURN_LEFT")
         return "TURN_LEFT"
 
@@ -41,7 +28,7 @@ class AgentRandom:
         dirs = ["NORTH", "EAST", "SOUTH", "WEST"]
         idx = dirs.index(self.direction)
         self.direction = dirs[(idx + 1) % 4]
-        # print(f"[AGENT] Turned right to {self.direction}")
+        print(f"[AGENT] Turned right to {self.direction}")
         self.action_log.append("TURN_RIGHT")
         return "TURN_RIGHT"
 
@@ -51,11 +38,13 @@ class AgentRandom:
         cur_idx = dirs.index(self.direction)
         tgt_idx = dirs.index(target_dir)
 
+        # Xác định xoay trái hay phải
         if (cur_idx - tgt_idx) % 4 == 1:
             return self.turn_left()
         elif (tgt_idx - cur_idx) % 4 == 1:
             return self.turn_right()
         else:
+            # Nếu khác 180° → xoay trái hoặc phải tùy ý (ưu tiên trái)
             return self.turn_left()
 
     def get_direction_to(self, next_pos):
@@ -66,6 +55,7 @@ class AgentRandom:
         if ny < self.y: return "SOUTH"
         return self.direction
 
+
     def get_wumpus_direction(self):
         possible_wumpus_cells = self.inference.get_possible_wumpus()
         if not possible_wumpus_cells:
@@ -74,6 +64,7 @@ class AgentRandom:
         min_dist = float('inf')
         target_dir = None
         for (wx, wy) in possible_wumpus_cells:
+            # Chỉ xét nếu cùng hàng hoặc cùng cột
             if wx == self.x or wy == self.y:
                 dist = abs(wx - self.x) + abs(wy - self.y)
                 if dist < min_dist:
@@ -99,132 +90,191 @@ class AgentRandom:
             return "DIE"
 
         percepts = self.env.get_percepts(self.x, self.y)
-        try:
-            self.inference.update_knowledge(
-                (self.x, self.y),
-                percepts,
-                action_count=len(self.action_log),
-                agent_pos=(self.x, self.y)
-            )
-        except TypeError:
-            self.inference.update_knowledge((self.x, self.y), percepts)
+        self.inference.update_knowledge((self.x, self.y), percepts)
 
-        # Nhặt vàng
-        if percepts.get('glitter', False) and not self.has_gold:
+        # ---- GRAB GOLD ----
+        if percepts["glitter"] and not self.has_gold:
             self.has_gold = True
-            self.point += 1000
+            self.env.grab_gold()
+            self.action_log.append("GRAB")
+            self.point += 10
             return "GRAB"
 
-        # Nếu có vàng → về nhà
+        # ---- CLIMB OUT ----
         if self.has_gold and (self.x, self.y) == (0, 0):
-            self.escaped = True
-            self.point += 1000
+            result = self.env.climb_out()
+            self.escaped = result["escaped"]
+            self.action_log.append("CLIMB")
+            if self.escaped:
+                self.point += 1000
             return "CLIMB"
 
-        # Bắn Wumpus nếu ngay trước mặt
-        if self.has_arrow and percepts.get('stench', False):
-            target = self.get_position_in_direction(self.direction)
-            if self.is_wumpus_ahead(target):
-                self.has_arrow = False
-                killed = self.env.shoot_arrow(self.x, self.y, self.direction)
-                if killed:
-                    self.inference.mark_wumpus_dead(target)
-                return "SHOOT"
+        # ---- GO HOME WITH GOLD ----
+        if self.has_gold:
+            path_home = dfs_search((self.x, self.y), (0, 0),
+                                     self.inference.is_safe, self.env.size)
+            if path_home:
+                next_pos = path_home[0]
+                target_dir = self.get_direction_to(next_pos)
+                if self.direction != target_dir:
+                    return self.turn_towards(target_dir)  # xoay trước
+                if self.is_move_safe(next_pos):
+                    self.move_to(next_pos)
+                    return "MOVE"
+                return "STUCK"
+            return "STUCK"
 
-        if self.plan:
-            next_pos = self.plan.pop(0)
-            target_dir = self.get_direction_to(next_pos)
+        # ---- SHOOT WUMPUS ----
+        if self.has_arrow and percepts["stench"] and self.can_shoot_wumpus_safely():
+            target_dir = self.get_wumpus_direction()
+            if target_dir and self.direction != target_dir:
+                return self.turn_towards(target_dir)  # xoay trước khi bắn
+            result = self.env.shoot_arrow(self.direction)
+            self.has_arrow = False
+            self.point -= 10
+            if result["scream"]:
+                self.inference.remove_wumpus_after_kill((self.x, self.y), self.direction)
+                self.action_log.append("SHOOT_HIT")
+                return "SHOOT_HIT"
+            else:
+                self.action_log.append("SHOOT_MISS")
+                return "SHOOT_MISS"
+
+        # ---- MOVE TO SAFE NEIGHBOR ----
+        safe_neighbors = self.get_truly_safe_neighbors()
+        if safe_neighbors:
+            best_neighbor = self.choose_best_neighbor(safe_neighbors) # ưu tiên ô gần trung tâm
+            target_dir = self.get_direction_to(best_neighbor)
             if self.direction != target_dir:
-                return self.turn_towards(target_dir)
-            moved = self.move_to(next_pos)
-            if moved:
-                self.visited.add(next_pos)
-            return "MOVE" if moved else "STUCK"
+                return self.turn_towards(target_dir)  # xoay trước khi đi
+            self.move_to(best_neighbor)
+            return "MOVE"
 
-
-        all_safe_unvisited = [
-            (x, y)
-            for x in range(self.env.size)
-            for y in range(self.env.size)
-            if self.is_move_safe((x, y)) and (x, y) not in self.visited
-        ]
-        if all_safe_unvisited:
-            goal = random.choice(all_safe_unvisited)
-            path = dfs_search(
-                (self.x, self.y),
-                goal,
-                lambda pos: [
-                    n for n in get_neighbors(pos, self.env.size)
-                    if self.is_move_safe(n)
-                ]
-            )
+        # ---- EXPLORE SAFE UNKNOWN ----
+        exploration_target = self.find_safe_exploration_target()
+        if exploration_target:
+            path = dfs_search((self.x, self.y), exploration_target,
+                                self.inference.is_safe, self.env.size)
             if path:
-            
-                self.plan = path[1:]
-                return self.step()
+                target_dir = self.get_direction_to(path[0])
+                if self.direction != target_dir:
+                    return self.turn_towards(target_dir)
+                if self.is_move_safe(path[0]):
+                    self.move_to(path[0])
+                    return "MOVE"
 
-      
+        # ---- RETURN HOME IF NOTHING ELSE ----
+        if not self.has_gold and (self.x, self.y) != (0, 0):
+            path_home = dfs_search((self.x, self.y), (0, 0),
+                                     self.inference.is_safe, self.env.size)
+            if path_home:
+                target_dir = self.get_direction_to(path_home[0])
+                if self.direction != target_dir:
+                    return self.turn_towards(target_dir)
+                if self.is_move_safe(path_home[0]):
+                    self.move_to(path_home[0])
+                    return "MOVE"
+
+        # ---- HANDLE BREEZE ----
+        if percepts["breeze"]:
+            self._handle_breeze_situation()
+
         return "STAY"
 
+
     def check_death(self):
-        current_cell = self.env.grid[self.y][self.x]
+        """Check if agent is in a deadly cell"""
+        current_cell = self.env.grid[self.y][self.x]  # Note: grid[y][x] format
         return current_cell.pit or current_cell.wumpus
 
     def is_move_safe(self, next_pos):
         next_x, next_y = next_pos
-
+        
         # Kiểm tra giới hạn
         if not (0 <= next_x < self.env.size and 0 <= next_y < self.env.size):
             return False
-
+            
         # Kiểm tra từ inference
         kb_info = self.inference.kb.get((next_x, next_y), {})
-
+        
+        # Nếu đã thăm và có pit hoặc wumpus thì không an toàn
         if (next_x, next_y) in self.inference.confirmed_pits:
             return False
         if (next_x, next_y) in self.inference.confirmed_wumpus:
             return False
-
-        # nếu đã thăm thì coi là an toàn
+        
+        # Nếu chưa thăm và có khả năng là pit hoặc wumpus thì coi như không an toàn
+        # if not kb_info.get('visited', False):
+        #     if kb_info.get('possible_pit', False):
+        #         return False
+        #     if kb_info.get('possible_wumpus', False):
+        #         return False
+        
+        # return True
+        # Chỉ di nếu đã thăm hoặc chắc chắn không có pit/wumpus
         if kb_info.get('visited', False):
             return True
-        # nếu inference đồng ý an toàn thì ok
-        try:
-            return self.inference.is_safe((next_x, next_y))
-        except Exception:
-            # fallback: nếu không có is_safe, dùng flags
-            if not kb_info.get('possible_pit', False) and not kb_info.get('possible_wumpus', False):
-                return True
+        if not kb_info.get('possible_pit', False) and not kb_info.get('possible_wumpus', False):
+            return True
+
         return False
 
+    # def get_truly_safe_neighbors(self):
+    #     """Get neighbors that are definitely safe"""
+    #     neighbors = get_neighbors((self.x, self.y), self.env.size)
+    #     safe_neighbors = []
+        
+    #     for pos in neighbors:
+    #         if (self.is_move_safe(pos) and 
+    #             not self.inference.kb.get(pos, {}).get('visited', False)):
+    #             safe_neighbors.append(pos)
+        
+    #     return safe_neighbors
     def get_truly_safe_neighbors(self):
         neighbors = get_neighbors((self.x, self.y), self.env.size)
         safe_neighbors = []
+        
         for pos in neighbors:
-            if self.is_move_safe(pos):
+            if self.is_move_safe(pos) and not self.inference.kb.get(pos, {}).get('visited', False):
                 safe_neighbors.append(pos)
-                # giữ tương thích: mark neighbors of pos safe
-                try:
-                    self.inference.mark_safe_and_neighbors(pos)
-                except Exception:
-                    pass
+                # mark neighbors of pos safe luôn
+                self.inference.mark_safe_and_neighbors(pos)
+        
         return safe_neighbors
 
 
+    def choose_best_neighbor(self, safe_neighbors):
+        """Chọn neighbor tốt nhất để khám phá bằng DFS (ưu tiên neighbor có đường đi dài nhất)"""
+        if not safe_neighbors:
+            return None
+        max_len = -1
+        best_neighbor = safe_neighbors[0]
+        for pos in safe_neighbors:
+            # Truyền goal là hàm luôn trả về False để DFS đi hết map từ pos
+            path = dfs_search(pos, lambda n: False, self.inference.is_safe, self.env.size)
+            if path and len(path) > max_len:
+                max_len = len(path)
+                best_neighbor = pos
+        return best_neighbor
+
     def find_safe_exploration_target(self):
+        """Find a safe unexplored cell to target"""
         for x in range(self.env.size):
             for y in range(self.env.size):
                 pos = (x, y)
                 kb_info = self.inference.kb.get(pos, {})
                 if (not kb_info.get('visited', False) and 
-                    (self.inference.is_safe(pos) if hasattr(self.inference, 'is_safe') else True) and
+                    self.inference.is_safe(pos) and
                     self.is_move_safe(pos)):
                     return pos
         return None
 
     def can_shoot_wumpus_safely(self):
+        """Check if shooting would be beneficial and safe"""
         if not self.has_arrow:
             return False
+            
+        # Check if there's likely a wumpus in shooting direction
         x, y = self.x, self.y
         dx, dy = {
             "NORTH": (0, 1),
@@ -232,7 +282,8 @@ class AgentRandom:
             "SOUTH": (0, -1),
             "WEST": (-1, 0)
         }.get(self.direction, (0, 0))
-
+        
+        # Look ahead in shooting direction
         check_x, check_y = x + dx, y + dy
         while (0 <= check_x < self.env.size and 0 <= check_y < self.env.size):
             pos = (check_x, check_y)
@@ -240,51 +291,156 @@ class AgentRandom:
                 return True
             check_x += dx
             check_y += dy
-
+            
         return False
 
     def move_to(self, next_pos):
+        """Move agent to next position"""
         # Double-check safety before moving
         if not self.is_move_safe(next_pos):
-            # print(f"[AGENT] Warning: Attempting unsafe move to {next_pos}")
-            self.action_log.append(f"BLOCKED {next_pos}")
+            print(f"[AGENT] Warning: Attempting unsafe move to {next_pos}")
             return False
-
+            
         old_pos = (self.x, self.y)
         self.x, self.y = next_pos
-        # nếu moved vào ô chưa xuất hiện trên stack thì thêm; trong DFS core đã push trước
-        if not self.path or self.path[-1] != next_pos:
-            self.path.append(next_pos)
-        self.prev_pos = old_pos
-
+        self.path.append(next_pos)
+        
         result = self.env.move_agent(self.x, self.y)
         self.action_log.append(f"MOVE to {next_pos}")
         self.point -= 1
-
-        if result.get("eaten", False):
-            self.dead = True
-            return False
-
+        
+        # Check for death after moving
         if self.check_death():
             self.dead = True
             self.point -= 1000
-            # print(f"[AGENT] Agent died moving from {old_pos} to {next_pos}")
-            return False
-
+            print(f"[AGENT] Agent died moving from {old_pos} to {next_pos}")
+            
         return True
 
     def finished(self):
         return self.escaped or self.dead
 
-    # helper: đếm neighbors chưa khám phá dùng để ưu tiên fallback moves
-    def count_unexplored_neighbors(self, pos):
-        neighbors = get_neighbors(pos, self.env.size)
-        count = 0
-        for n in neighbors:
-            kb = self.inference.kb.get(n, {})
-            if not kb.get('visited', False) and self.is_move_safe(n):
-                count += 1
-        return count
+    def take_action(self, action):
+        """Backward compatibility method"""
+        if action == "Move Forward":
+            self.point -= 1
+        elif action == "Grab":
+            self.point += 10
+        elif action == "Climb":
+            self.point += 1000 if self.has_gold else 0
+        elif action == "Shoot":
+            self.point -= 10
 
-    # Keep other helper methods used by original agent (breeze handling, find_path_avoiding_pits, etc.)
-    # but it's optional for DFS behavior — you can keep original implementations if present.
+    def _handle_breeze_situation(self):
+        """Xử lý khi agent phát hiện breeze - phiên bản nâng cao"""
+        confirmed_pits = self.inference.confirmed_pits
+        possible_pits = self.inference.get_possible_pits()
+        
+        # Ưu tiên 1: Tìm đường tránh confirmed pits
+        if confirmed_pits:
+            safe_path = self.find_path_avoiding_pits(confirmed_pits)
+            if safe_path:
+                return self._execute_move(safe_path[0])
+        
+        # Ưu tiên 2: Nếu bị kẹt giữa possible pits, quay lại ô đã visited
+        if possible_pits:
+            # Tìm ô đã visited gần nhất không có breeze
+            safe_retreat = self._find_safe_retreat()
+            if safe_retreat:
+                path = dfs_search((self.x, self.y), safe_retreat,
+                                self.inference.is_safe, self.env.size)
+                if path:
+                    return self._execute_move(path[0])
+        
+        # Ưu tiên 3: Thử di chuyển đến ô có ít possible pits xung quanh nhất
+        safe_moves = self._get_safest_possible_moves()
+        if safe_moves:
+            return self._execute_move(safe_moves[0][0])
+        
+        # Cuối cùng: Thử quay về (0,0)
+        if (self.x, self.y) != (0, 0):
+            path_home = dfs_search((self.x, self.y), (0, 0),
+                                self.inference.is_safe, self.env.size)
+            if path_home:
+                return self._execute_move(path_home[0])
+            
+
+    def _get_safest_possible_moves(self):
+        from .utils_random import get_neighbors
+        
+        neighbors = get_neighbors((self.x, self.y), self.env.size)
+        possible_pits = self.inference.get_possible_pits()
+        safe_moves = []
+        
+        for pos in neighbors:
+            if self.is_move_safe(pos):
+                # Tính risk (số possible pits xung quanh ô đích)
+                risk = sum(1 for p in get_neighbors(pos, self.env.size) 
+                        if p in possible_pits)
+                safe_moves.append((pos, risk))
+        
+        # Sắp xếp theo risk tăng dần
+        safe_moves.sort(key=lambda x: x[1])
+        return safe_moves
+    
+    def _find_safe_retreat(self):
+        """Tìm ô đã visited không có breeze bằng DFS"""
+        visited_safe = []
+        for pos, data in self.inference.kb.items():
+            if data['visited']:
+                percepts = self.env.get_percepts(pos[0], pos[1])
+                if not percepts.get('breeze', False):
+                    visited_safe.append(pos)
+        if not visited_safe:
+            return None
+        # Tìm đường bằng DFS đến từng ô, chọn ô gần nhất (ít bước nhất)
+        min_path = None
+        min_len = float('inf')
+        for target in visited_safe:
+            path = dfs_search((self.x, self.y), target, self.inference.is_safe, self.env.size)
+            if path and len(path) < min_len:
+                min_len = len(path)
+                min_path = path
+        if min_path:
+            return min_path[-1]  # trả về ô retreat cuối cùng
+        return None
+
+
+    def find_path_avoiding_pits(self, pits):
+        from .planner_random import dfs_search
+
+        def is_safe_but_avoid_pits(pos):
+            if pos in pits:
+                return False
+            return self.inference.is_safe(pos)
+
+        return dfs_search((self.x, self.y), (0, 0), is_safe_but_avoid_pits, self.env.size)
+
+    def find_safest_path(self, possible_pits):
+        from .planner_random import dfs_search
+        
+        def safety_cost(pos):
+            if pos in possible_pits:
+                return 100  # Phạt nặng các ô possible pit
+            return 1
+        
+        # Sử dụng A* với hàm cost tùy chỉnh
+        path = []
+        min_cost = float('inf')
+        
+        # Thử tìm đường đến các ô safe unvisited trước
+        safe_targets = self.inference.get_safe_unvisited_neighbors((self.x, self.y))
+        for target in safe_targets:
+            current_path = dfs_search((self.x, self.y), target,
+                                    self.inference.is_safe, self.env.size)
+            if current_path:
+                current_cost = sum(safety_cost(p) for p in current_path)
+                if current_cost < min_cost:
+                    min_cost = current_cost
+                    path = current_path
+        
+        # Nếu không tìm được, thử về (0,0)
+        if not path:
+            path = dfs_search((self.x, self.y), (0, 0),
+                            self.inference.is_safe, self.env.size)
+        return path
