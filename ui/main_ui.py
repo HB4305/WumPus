@@ -681,8 +681,6 @@ def showAgentMove(_, path, maps_data, __, list_env):
 
 
 
-
-
         # Draw everything
         draw_action_info()
         draw_buttons()
