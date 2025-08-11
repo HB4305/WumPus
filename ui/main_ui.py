@@ -630,15 +630,15 @@ def showAgentMove(_, path, maps_data, __, list_env, agent_mode, agent_index=0):
                             if cell[0] == '':
                                 cell[0] = '-'
 
-            M2.updateMap(maps[count_map])
-            showGameBackground(screen, level=1)
-            M2.showUnknownBoard()
-            for pos_x, pos_y in visited_positions:
-                M2.showPath(pos_x, pos_y)
-            for kx, ky in killed_wumpus_positions:
-                if 0 <= kx < map_size and 0 <= ky < map_size:
-                    M2.showEmpty(ky, kx, M2.h)
-            M2.showAgent(y, x, M2.h)
+        M2.updateMap(maps[count_map])
+        showGameBackground(screen, level=1)
+        M2.showUnknownBoard()
+        for pos_x, pos_y in visited_positions:
+            M2.showPath(pos_x, pos_y)
+        for kx, ky in killed_wumpus_positions:
+            if 0 <= kx < map_size and 0 <= ky < map_size:
+                M2.showEmpty(ky, kx, M2.h)
+        M2.showAgent(y, x, M2.h)
 
         I2.showLeftBar(map_size, score=current_score)
         current_step += 1
