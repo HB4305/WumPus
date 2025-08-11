@@ -600,6 +600,21 @@ def showAgentMove(_, path, maps_data, __, list_env):
             print(index_env)
             maps[count_map] = env_maps[index_env]
             index_env += 1
+            # Cập nhật lại ký hiệu 'W' cho các ô có Wumpus mới
+            for row in range(map_size):
+                for col in range(map_size):
+                    cell = maps[count_map][row][col]
+                    # Nếu có Wumpus thì đảm bảo cell[0] chứa 'W'
+                    if getattr(cell, 'wumpus', False) or (isinstance(cell, list) and 'W' in cell[0]):
+                        if isinstance(cell, list):
+                            if 'W' not in cell[0]:
+                                cell[0] = cell[0].replace('-', '') + 'W'
+                    else:
+                        if isinstance(cell, list):
+                            cell[0] = cell[0].replace('W', '')
+                            if cell[0] == '':
+                                cell[0] = '-'
+
             M2.updateMap(maps[count_map])
             showGameBackground(screen, level=1)
             M2.showUnknownBoard()
