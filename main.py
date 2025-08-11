@@ -119,7 +119,7 @@ def main():
                     break
 
             # Show agent movement
-            main_ui.showAgentMove(None, RESULT, MAPS, None, None)
+            main_ui.showAgentMove(None, RESULT, MAPS, None, None, agent_mode=0, agent_index=0)
 
             # Write output
             write_output(file_path="output/result.txt", agent=agent, RES=RESULT)
