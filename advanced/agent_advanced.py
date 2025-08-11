@@ -260,12 +260,18 @@
 #         neighbors = get_neighbors((self.x, self.y), self.env.size)
 #         safe_neighbors = []
         
+#         # Ưu tiên các ô chưa visited
 #         for pos in neighbors:
 #             if self.is_move_safe(pos) and not self.inference.kb.get(pos, {}).get('visited', False):
 #                 safe_neighbors.append(pos)
-#                 # mark neighbors of pos safe luôn
 #                 self.inference.mark_safe_and_neighbors(pos)
-        
+
+#         # Nếu không còn ô chưa visited, cho phép đi lại ô đã visited (an toàn)
+#         if not safe_neighbors:
+#             for pos in neighbors:
+#                 if self.is_move_safe(pos):
+#                     safe_neighbors.append(pos)
+
 #         return safe_neighbors
 
 #     def choose_best_neighbor(self, safe_neighbors):
@@ -328,7 +334,7 @@
 #         result = self.env.move_agent(self.x, self.y)
 #         if result.get("eaten", False):
 #             self.dead = True
-#             print(f"[AGENT_ADVANCED] Agent eaten by Wumpus while moving to {next_pos}")
+#             print(f"[AGENT_ADVANCED] Agent bị Wumpus ăn khi di chuyển đến {next_pos}")
 #             return False
 #         self.action_log.append(f"MOVE to {next_pos}")
 #         self.point -= 1
@@ -475,7 +481,8 @@ class AgentAdvanced:
         self.action_log = []
         self.escaped = False
         self.dead = False
-        # Bỏ biến đếm hành động agent riêng
+        # nhớ ô trước khi di chuyển để tránh back-and-forth
+        self.prev_pos = None
 
     def turn_left(self):
         dirs = ["NORTH", "WEST", "SOUTH", "EAST"]
@@ -488,7 +495,6 @@ class AgentAdvanced:
     def turn_right(self):
         dirs = ["NORTH", "EAST", "SOUTH", "WEST"]
         idx = dirs.index(self.direction)
-        self.direction = dirs[(idx + 1) % 4]
         self.direction = dirs[(idx + 1) % 4]
         self.action_log.append("TURN_RIGHT")
         return "TURN_RIGHT"
@@ -559,18 +565,72 @@ class AgentAdvanced:
         neighbors = get_neighbors((self.x, self.y), self.env.size)
         safe_neighbors = []
 
+        # Lấy tất cả ô an toàn theo is_move_safe
         for pos in neighbors:
-            if self.is_move_safe(pos) and not self.inference.kb.get(pos, {}).get('visited', False):
+            if self.is_move_safe(pos):
                 safe_neighbors.append(pos)
-                self.inference.mark_safe_and_neighbors(pos)
 
+        if not safe_neighbors:
+            return []
+
+        # Nếu có nhiều lựa chọn, tránh immediate backtrack về prev_pos (nếu prev_pos tồn tại)
+        if self.prev_pos and self.prev_pos in safe_neighbors and len(safe_neighbors) > 1:
+            safe_neighbors.remove(self.prev_pos)
+
+        # Sắp xếp ưu tiên:
+        # 1) unvisited trước (False < True)
+        # 2) nhiều unexplored neighbors hơn (desc)
+        # 3) gần center hơn (tie-break)
+        center = (self.env.size // 2, self.env.size // 2)
+        def unexplored_count(pos):
+            return self.count_unexplored_neighbors(pos)
+
+        safe_neighbors.sort(key=lambda p: (
+            self.inference.kb.get(p, {}).get('visited', False),   # False (unvisited) < True (visited)
+            -unexplored_count(p),                                 # more unexplored neighbors first
+            heuristic(p, center)                                  # smaller distance to center
+        ))
         return safe_neighbors
 
+
+
     def choose_best_neighbor(self, safe_neighbors):
+        """Chọn ô tốt nhất dựa trên độ ưu tiên khám phá, tránh prev_pos nếu có thể."""
         if not safe_neighbors:
             return None
-        center = (self.env.size // 2, self.env.size // 2)
-        return min(safe_neighbors, key=lambda pos: heuristic(pos, center))
+
+        # nếu prev_pos có trong danh sách và còn lựa chọn khác, không chọn prev_pos
+        candidates = list(safe_neighbors)
+        if self.prev_pos and self.prev_pos in candidates and len(candidates) > 1:
+            candidates.remove(self.prev_pos)
+
+        # Phân loại unvisited / visited
+        unvisited = [pos for pos in candidates 
+                     if not self.inference.kb.get(pos, {}).get('visited', False)]
+        visited = [pos for pos in candidates 
+                   if self.inference.kb.get(pos, {}).get('visited', False)]
+
+        # Nếu có unvisited -> chọn ô có nhiều unexplored neighbors nhất
+        if unvisited:
+            return max(unvisited, key=lambda pos: self.count_unexplored_neighbors(pos))
+
+        # Nếu không có unvisited -> chọn visited dẫn tới nhiều unexplored neighbors
+        if visited:
+            return max(visited, key=lambda pos: self.count_unexplored_neighbors(pos))
+
+        # Fallback
+        return candidates[0]
+
+    def count_unexplored_neighbors(self, pos):
+        neighbors = get_neighbors(pos, self.env.size)
+        count = 0
+        for n in neighbors:
+            kb_info = self.inference.kb.get(n, {})
+            # coi là 'chưa khám phá' nếu chưa visited và có thể di chuyển (is_move_safe)
+            if not kb_info.get('visited', False) and self.is_move_safe(n):
+                count += 1
+        return count
+
 
     def can_shoot_wumpus_safely(self):
         if not self.has_arrow:
@@ -605,11 +665,14 @@ class AgentAdvanced:
         self.action_log.append(f"MOVE to {next_pos}")
         self.point -= 1
 
+        # cập nhật prev_pos **chỉ khi** di chuyển thành công
+        self.prev_pos = old_pos
+
         if result.get("eaten", False):
             self.dead = True
             print(f"[AGENT_ADVANCED] Agent bị Wumpus ăn khi di chuyển đến {next_pos}")
             return False
-
+        
         if self.check_death():
             self.dead = True
             self.point -= 1000
