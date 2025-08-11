@@ -773,5 +773,49 @@ class AgentAdvanced:
                     self.move_to(path_home[0])
                     return "MOVE"
 
+        # Nếu không còn neighbor an toàn, tìm ô an toàn chưa visited ở xa và đi tới đó
+        unexplored_safe = []
+        for x in range(self.env.size):
+            for y in range(self.env.size):
+                pos = (x, y)
+                kb_info = self.inference.kb.get(pos, {})
+                if self.is_move_safe(pos) and not kb_info.get('visited', False):
+                    unexplored_safe.append(pos)
+        # Nếu còn ô an toàn chưa visited, tìm đường tới đó
+        if unexplored_safe:
+            # Chọn ô gần nhất
+            target = min(unexplored_safe, key=lambda p: heuristic((self.x, self.y), p))
+            path = astar_search((self.x, self.y), target, self.inference.is_safe, self.env.size)
+            if path:
+                next_pos = path[0]
+                target_dir = self.get_direction_to(next_pos)
+                if self.direction != target_dir:
+                    return self.turn_towards(target_dir)
+                if self.is_move_safe(next_pos):
+                    self.move_to(next_pos)
+                    return "MOVE"
+
+        # Nếu không còn neighbor an toàn chưa visited, vét cạn mọi ô an toàn chưa đi qua trong path
+        all_safe = []
+        for x in range(self.env.size):
+            for y in range(self.env.size):
+                pos = (x, y)
+                kb_info = self.inference.kb.get(pos, {})
+                # Chỉ cần là ô an toàn, chưa nằm trong path
+                if self.is_move_safe(pos) and pos not in self.path:
+                    all_safe.append(pos)
+        if all_safe:
+            # Chọn ô gần nhất
+            target = min(all_safe, key=lambda p: heuristic((self.x, self.y), p))
+            path = astar_search((self.x, self.y), target, self.inference.is_safe, self.env.size)
+            if path:
+                next_pos = path[0]
+                target_dir = self.get_direction_to(next_pos)
+                if self.direction != target_dir:
+                    return self.turn_towards(target_dir)
+                if self.is_move_safe(next_pos):
+                    self.move_to(next_pos)
+                    return "MOVE"
+
         return "STAY"
 
