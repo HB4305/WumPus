@@ -235,7 +235,7 @@ def main():
                     print("[MAIN] Agent has no safe moves")
                     break
             print(len(list_env))
-            main_ui.showAgentMove(None, RESULT, MAPS, None, list_env)
+            main_ui.showAgentMove(None, RESULT, MAPS, None, list_env, agent_mode = 0, agent_index = 0)
 
             write_map_to_file("output/wumpus_world_map_advanced.txt", env.grid)
             write_output(file_path="output/result.txt", agent=agent, RES=RESULT)
