@@ -124,9 +124,6 @@ class AgentAdvanced:
     def step(self):
         # if self.escaped or self.dead:
         #     return "STAY"
-        if self.x == 0 and self.y == 0 and len(self.path) > 1:
-            self.climb_out()
-            return "CLIMB"
 
         if self.check_death():
             self.dead = True
@@ -223,6 +220,10 @@ class AgentAdvanced:
                 if self.is_move_safe(path_to_target[0]):
                     self.move_to(path_to_target[0])
                     return "MOVE"
+                
+        if self.x == 0 and self.y == 0:
+            self.climb_out()
+            return "CLIMB"
 
         # ---- RETURN HOME IF NOTHING ELSE ----
         if not self.has_gold and (self.x, self.y) != (0, 0):

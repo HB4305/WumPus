@@ -97,9 +97,8 @@ class Agent:
         # if self.escaped or self.dead:
         #     return "STAY"
         
-        if self.x == 0 and self.y == 0 and len(self.path) > 1:
-            self.climb_out()
-            return "CLIMB"
+        # if self.x == 0 and self.y == 0 and len(self.path) > 1:
+        
 
         if self.check_death():
             self.dead = True
@@ -191,12 +190,16 @@ class Agent:
                 if self.is_move_safe(path_home[0]):
                     self.move_to(path_home[0])
                     return "MOVE"
+                
+        if self.x == 0 and self.y == 0:
+            self.climb_out()
+            return "CLIMB"
 
         # ---- HANDLE BREEZE ----
         if percepts["breeze"]:
             self._handle_breeze_situation()
-
         return "STAY"
+    
 
 
     def check_death(self):
