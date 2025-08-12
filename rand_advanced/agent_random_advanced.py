@@ -1,5 +1,6 @@
 from rand.planner_random import dfs_search
 from rand.utils_random import get_neighbors
+import random
 
 class AgentRandomAdvanced:
     def __init__(self, env, inference):
@@ -158,7 +159,7 @@ class AgentRandomAdvanced:
 
         # ---- GO HOME WITH GOLD ----
         if self.has_gold:
-            path_home = astar_search((self.x, self.y), (0, 0),
+            path_home = dfs_search((self.x, self.y), (0, 0),
                                     self.inference.is_safe, self.env.size)
             if path_home:
                 next_pos = path_home[0]
@@ -216,7 +217,7 @@ class AgentRandomAdvanced:
         if safe_unvisited:
             safe_unvisited.sort(key=lambda p: abs(p[0] - self.x) + abs(p[1] - self.y))
             target = safe_unvisited[0]
-            path_to_target = astar_search((self.x, self.y), target,
+            path_to_target = dfs_search((self.x, self.y), target,
                                         self.inference.is_safe, self.env.size)
             if path_to_target:
                 target_dir = self.get_direction_to(path_to_target[0])
@@ -235,7 +236,7 @@ class AgentRandomAdvanced:
 
         # ---- RETURN HOME IF NOTHING ELSE ----
         if not self.has_gold and (self.x, self.y) != (0, 0):
-            path_home = astar_search((self.x, self.y), (0, 0),
+            path_home = dfs_search((self.x, self.y), (0, 0),
                                     self.inference.is_safe, self.env.size)
             if path_home:
                 target_dir = self.get_direction_to(path_home[0])
@@ -314,24 +315,60 @@ class AgentRandomAdvanced:
         return safe_neighbors
 
     def choose_best_neighbor(self, safe_neighbors):
-        """Choose the best neighbor to explore"""
+        """tìm ô an toàn chưa thăm bằng bfs không bằng random tránh backtracking"""
+        from collections import deque
         if not safe_neighbors:
             return None
-            
-        # Prefer neighbors that are closer to the center for better exploration
-        center = (self.env.size // 2, self.env.size // 2)
-        return min(safe_neighbors, key=lambda pos: heuristic(pos, center))
+
+        # Ưu tiên ô chưa thăm gần nhất tính từ vị trí hiện tại
+        def bfs_find_closest(targets):
+            visited = set()
+            queue = deque([(self.x, self.y, [])])
+            while queue:
+                cx, cy, path = queue.popleft()
+                if (cx, cy) in visited:
+                    continue
+                visited.add((cx, cy))
+                if (cx, cy) in targets:
+                    return path[0] if path else (cx, cy)
+                for nx, ny in get_neighbors((cx, cy), self.env.size):
+                    if self.is_move_safe((nx, ny)):
+                        queue.append((nx, ny, path + [(nx, ny)]))
+            return None
+
+        return bfs_find_closest(set(safe_neighbors))
 
     def find_safe_exploration_target(self):
-        """Find a safe unexplored cell to target"""
-        for x in range(self.env.size):
-            for y in range(self.env.size):
-                pos = (x, y)
-                kb_info = self.inference.kb.get(pos, {})
-                if (not kb_info.get('visited', False) and 
-                    self.inference.is_safe(pos) and
-                    self.is_move_safe(pos)):
-                    return pos
+        targets = []
+        for pos, data in self.inference.kb.items():
+            if (not data.get('visited', False) and 
+                self.inference.is_safe(pos) and 
+                self.is_move_safe(pos)):
+                targets.append(pos)
+
+        if not targets:
+            return None
+
+        # Tìm ô gần nhất theo BFS
+        from collections import deque
+        visited = set()
+        queue = deque([(self.x, self.y)])
+        parent = { (self.x, self.y): None }
+
+        while queue:
+            current = queue.popleft()
+            if current in targets:
+                # Lấy bước đầu tiên của đường đi
+                while parent[current] != (self.x, self.y) and parent[current] is not None:
+                    current = parent[current]
+                return current
+
+            for neighbor in get_neighbors(current, self.env.size):
+                if neighbor not in visited and self.is_move_safe(neighbor):
+                    visited.add(neighbor)
+                    parent[neighbor] = current
+                    queue.append(neighbor)
+
         return None
 
     def can_shoot_wumpus_safely(self):
@@ -422,7 +459,7 @@ class AgentRandomAdvanced:
             # Tìm ô đã visited gần nhất không có breeze
             safe_retreat = self._find_safe_retreat()
             if safe_retreat:
-                path = astar_search((self.x, self.y), safe_retreat,
+                path = dfs_search((self.x, self.y), safe_retreat,
                                 self.inference.is_safe, self.env.size)
                 if path:
                     return self._execute_move(path[0])
@@ -434,7 +471,7 @@ class AgentRandomAdvanced:
         
         # Cuối cùng: Thử quay về (0,0)
         if (self.x, self.y) != (0, 0):
-            path_home = astar_search((self.x, self.y), (0, 0),
+            path_home = dfs_search((self.x, self.y), (0, 0),
                                 self.inference.is_safe, self.env.size)
             if path_home:
                 return self._execute_move(path_home[0])
@@ -470,7 +507,7 @@ class AgentRandomAdvanced:
             return None
             
         # Tìm ô gần nhất
-        return min(visited_safe, key=lambda p: heuristic((self.x, self.y), p))
+        return random.choice(visited_safe)
 
 
     def find_path_avoiding_pits(self, pits):
@@ -479,7 +516,7 @@ class AgentRandomAdvanced:
                 return False
             return self.inference.is_safe(pos)
 
-        return astar_search((self.x, self.y), (0, 0), is_safe_but_avoid_pits, self.env.size)
+        return dfs_search((self.x, self.y), (0, 0), is_safe_but_avoid_pits, self.env.size)
 
     def find_safest_path(self, possible_pits):
         def safety_cost(pos):
@@ -494,7 +531,7 @@ class AgentRandomAdvanced:
         # Thử tìm đường đến các ô safe unvisited trước
         safe_targets = self.inference.get_safe_unvisited_neighbors((self.x, self.y))
         for target in safe_targets:
-            current_path = astar_search((self.x, self.y), target,
+            current_path = dfs_search((self.x, self.y), target,
                                     self.inference.is_safe, self.env.size)
             if current_path:
                 current_cost = sum(safety_cost(p) for p in current_path)
@@ -504,7 +541,7 @@ class AgentRandomAdvanced:
         
         # Nếu không tìm được, thử về (0,0)
         if not path:
-            path = astar_search((self.x, self.y), (0, 0),
+            path = dfs_search((self.x, self.y), (0, 0),
                             self.inference.is_safe, self.env.size)
         return path
     # Hãy nhớ gọi self._increment_action() mỗi khi agent làm hành động: move, turn, grab, shoot, climb

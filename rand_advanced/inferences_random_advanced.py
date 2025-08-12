@@ -2,7 +2,7 @@ from collections import defaultdict
 from wumpus.inference import Inference  # import class gốc
 from wumpus.utils import get_neighbors
 
-class InferenceAdvanced(Inference):
+class InferenceRandomAdvanced(Inference):
     def __init__(self, size, environment):
         super().__init__(size, environment)
         self.last_wumpus_positions = set()

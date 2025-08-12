@@ -3,7 +3,7 @@ import random
 from wumpus.environment import Environment
 from wumpus.utils import get_neighbors
 
-class EnvironmentAdvanced(Environment):
+class EnvironmentRandomAdvanced(Environment):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.action_count = 0
