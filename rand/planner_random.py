@@ -3,98 +3,74 @@ import random
 from .utils_random import get_neighbors
 
 
-def dfs_search(start, goal, is_safe_fn, size, verbose=False):
+def dfs_search(start, goal, is_safe_fn, size, visited_global=None, verbose=False):
     """
-    DFS search có 2 chế độ:
-    - Nếu `goal` là tuple (gx, gy): tìm đường từ start tới goal và trả về list các ô (exclude start),
-      ví dụ [(nx1,ny1), (nx2,ny2), ..., (gx,gy)]. Nếu goal không reachable => trả về [].
-    - Nếu `goal` là callable: gọi goal(node) để kiểm tra. Nếu goal bao giờ cũng False (ví dụ lambda n: False),
-      hàm sẽ duyệt toàn bộ vùng có thể tới được (theo DFS) và trả về danh sách các node đã thăm (exclude start),
-      theo thứ tự duyệt.
-    - is_safe_fn(pos) -> bool: kiểm tra ô có an toàn để bước tới (dùng inference.is_safe).
-    - size: kích thước board (n x n). Pos dạng (x,y) với 0 <= x,y < size.
+    DFS search tránh loop:
+    - visited_local: mỗi lần gọi
+    - visited_global: các ô đã đi qua toàn game
     """
-    from collections import deque
-
-    # helper
     def in_bounds(pos):
         x, y = pos
         return 0 <= x < size and 0 <= y < size
 
     start = tuple(start)
-
     is_goal_callable = callable(goal)
     target = tuple(goal) if (not is_goal_callable and goal is not None) else None
 
-    # Quick: nếu start là goal coordinate
     if (not is_goal_callable) and target == start:
         return []
 
-    visited = set([start])
-    parent = {}  # parent[pos] = previous_pos, để reconstruct path khi tìm thấy goal
+    visited_local = set([start])
+    if visited_global:
+        visited_local.update(visited_global)
 
-    # classic DFS stack: store node
+    parent = {}
     stack = [start]
-
-    # visited_order for the "explore-all" mode (callable goal that never true)
     visited_order = []
 
     while stack:
         node = stack.pop()
-        # check goal
+
+        # --- Goal check ---
         if is_goal_callable:
             try:
-                if goal(node):  # goal satisfied
-                    # reconstruct path from start -> node (exclude start)
-                    path = []
-                    cur = node
-                    while cur != start:
-                        path.append(cur)
-                        cur = parent[cur]
-                    path.reverse()
-                    return path
+                if goal(node):
+                    return _reconstruct_path(parent, start, node)
             except Exception:
-                # defensive: if user's callable errors, ignore and continue
                 pass
         else:
             if node == target:
-                # reconstruct path
-                path = []
-                cur = node
-                while cur != start:
-                    path.append(cur)
-                    cur = parent[cur]
-                path.reverse()
-                return path
+                return _reconstruct_path(parent, start, node)
 
-        # record visited order for explore-all mode (exclude start)
-        if node != start:
+        if node != start and (not visited_global or node not in visited_global):
             visited_order.append(node)
 
-        # neighbors: EAST, WEST, NORTH, SOUTH — order can affect DFS shape
+        # --- Neighbors ---
         x, y = node
-        neighbors = [(x+1,y), (x-1,y), (x,y+1), (x,y-1)]
+        neighbors = [(x+1, y), (x-1, y), (x, y+1), (x, y-1)]
 
-        # push neighbors (we push only safe & unvisited)
         for nbr in neighbors:
             if not in_bounds(nbr):
                 continue
-            if nbr in visited:
+            if nbr in visited_local:
                 continue
-            # check safe (use provided is_safe_fn). If is_safe_fn expects visited info, it's up to it.
             try:
-                safe = is_safe_fn(nbr)
+                if not is_safe_fn(nbr):
+                    continue
             except Exception:
-                safe = False
-            if not safe:
                 continue
-            visited.add(nbr)
+            visited_local.add(nbr)
             parent[nbr] = node
             stack.append(nbr)
 
-    # nếu đến đây: không tìm thấy goal coordinate, hoặc callable không bao giờ trả True
-    if is_goal_callable:
-        # trả về danh sách các ô đã thăm (exclude start) để dùng cho heuristics như bạn đang làm
-        return visited_order
-    else:
-        return []
+    return visited_order if is_goal_callable else []
+
+
+def _reconstruct_path(parent, start, node):
+    path = []
+    cur = node
+    while cur != start:
+        path.append(cur)
+        cur = parent[cur]
+    path.reverse()
+    return path
