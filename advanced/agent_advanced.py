@@ -109,10 +109,24 @@ class AgentAdvanced:
             self.point -= 1000
             print(f"[AGENT_ADVANCED] Agent died moving from {old_pos} to {next_pos}")
         return True
+    
+    def climb_out(self):
+        """Climb out of the cave"""
+        if (self.x, self.y) == (0, 0):
+            result = self.env.climb_out()
+            self.escaped = result["escaped"]
+            self.action_log.append("CLIMB")
+            if self.escaped:
+                self.point += 1000 if self.has_gold else 0
+            return True
+        return False
 
     def step(self):
-        if self.escaped or self.dead:
-            return "STAY"
+        # if self.escaped or self.dead:
+        #     return "STAY"
+        if self.x == 0 and self.y == 0 and len(self.path) > 1:
+            self.climb_out()
+            return "CLIMB"
 
         if self.check_death():
             self.dead = True
