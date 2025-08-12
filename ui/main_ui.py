@@ -175,6 +175,7 @@ def showMenu():
             result = inputForm()
             if result is not None:  # Only return if we got valid input
                 return result
+        
         elif choose_option == 1:  # Quit
             pygame.quit()
             sys.exit()
@@ -675,7 +676,7 @@ def showAgentMove(_, path, maps_data, __, list_env, agent_mode, agent_index=0):
         # Chỉ hiển thị agent nếu không ở trạng thái CLIMB tại (0,0)
             if not (action in ['Climb', 'CLIMB'] and x == 0 and y == 0):
                 M2.showAgent(y, x, M2.h)
-        elif agent_died and action == 'DIE':
+        elif agent_died and (action == 'DIE' or died):
             M2.showDie(y, x, M2.h)
             
         I2.showLeftBar(map_size, score=current_score)

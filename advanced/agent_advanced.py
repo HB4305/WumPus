@@ -167,7 +167,10 @@ class AgentAdvanced:
                 if self.direction != target_dir:
                     return self.turn_towards(target_dir)
                 if self.is_move_safe(next_pos):
-                    self.move_to(next_pos)
+                    # self.move_to(next_pos)
+                    move_result = self.move_to(next_pos)
+                    if not move_result:  # Nếu move_to trả về False (agent chết)
+                        return "DIE"
                     return "MOVE"
                 return "STUCK"
             return "STUCK"
@@ -200,7 +203,10 @@ class AgentAdvanced:
             target_dir = self.get_direction_to(best_neighbor)
             if self.direction != target_dir:
                 return self.turn_towards(target_dir)
-            self.move_to(best_neighbor)
+            # self.move_to(best_neighbor)
+            move_result = self.move_to(best_neighbor)
+            if not move_result:  # Nếu move_to trả về False (agent chết)
+                return "DIE"
             return "MOVE"
         
         # ---- MOVE TO SAFE UNVISITED ANYWHERE ----
@@ -218,7 +224,10 @@ class AgentAdvanced:
                 if self.direction != target_dir:
                     return self.turn_towards(target_dir)
                 if self.is_move_safe(path_to_target[0]):
-                    self.move_to(path_to_target[0])
+                    # self.move_to(path_to_target[0])
+                    move_result = self.move_to(path_to_target[0])
+                    if not move_result:  # Nếu move_to trả về False (agent chết)
+                        return "DIE"
                     return "MOVE"
                 
         if self.x == 0 and self.y == 0:
@@ -234,7 +243,10 @@ class AgentAdvanced:
                 if self.direction != target_dir:
                     return self.turn_towards(target_dir)
                 if self.is_move_safe(path_home[0]):
-                    self.move_to(path_home[0])
+                    # self.move_to(path_home[0])
+                    move_result = self.move_to(path_home[0])
+                    if not move_result:  # Nếu move_to trả về False (agent chết)
+                        return "DIE"
                     return "MOVE"
 
         return "STAY"
@@ -362,6 +374,9 @@ class AgentAdvanced:
         result = self.env.move_agent(self.x, self.y)
         if result.get("eaten", False):
             self.dead = True
+            #####
+
+            ####3
             print(f"[AGENT_ADVANCED] Agent eaten by Wumpus while moving to {next_pos}")
             return False
         self.action_log.append(f"MOVE to {next_pos}")
@@ -373,7 +388,9 @@ class AgentAdvanced:
             self.dead = True
             self.point -= 1000
             print(f"[AGENT] Agent died moving from {old_pos} to {next_pos}")
-            
+            ##########33
+            return False
+        ##############
         return True
 
     def finished(self):

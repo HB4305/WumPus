@@ -135,7 +135,10 @@ class Agent:
                 if self.direction != target_dir:
                     return self.turn_towards(target_dir)  # xoay trước
                 if self.is_move_safe(next_pos):
-                    self.move_to(next_pos)
+                    # self.move_to(next_pos)
+                    move_result = self.move_to(next_pos)
+                    if not move_result:  # Nếu move_to trả về False (agent chết)
+                        return "DIE"
                     return "MOVE"
                 return "STUCK"
             return "STUCK"
@@ -163,7 +166,10 @@ class Agent:
             target_dir = self.get_direction_to(best_neighbor)
             if self.direction != target_dir:
                 return self.turn_towards(target_dir)  # xoay trước khi đi
-            self.move_to(best_neighbor)
+            # self.move_to(best_neighbor)
+            move_result = self.move_to(best_neighbor)
+            if not move_result:  # Nếu move_to trả về False (agent chết)
+                return "DIE"
             return "MOVE"
 
         # ---- EXPLORE SAFE UNKNOWN ----
@@ -176,7 +182,10 @@ class Agent:
                 if self.direction != target_dir:
                     return self.turn_towards(target_dir)
                 if self.is_move_safe(path[0]):
-                    self.move_to(path[0])
+                    # self.move_to(path[0])
+                    move_result = self.move_to(path[0])
+                    if not move_result:  # Nếu move_to trả về False (agent chết)
+                        return "DIE"
                     return "MOVE"
 
         # ---- RETURN HOME IF NOTHING ELSE ----
@@ -188,7 +197,10 @@ class Agent:
                 if self.direction != target_dir:
                     return self.turn_towards(target_dir)
                 if self.is_move_safe(path_home[0]):
-                    self.move_to(path_home[0])
+                    # self.move_to(path_home[0])
+                    move_result = self.move_to(path_home[0])
+                    if not move_result:  # Nếu move_to trả về False (agent chết)
+                        return "DIE"
                     return "MOVE"
                 
         if self.x == 0 and self.y == 0:
@@ -328,7 +340,7 @@ class Agent:
             self.dead = True
             self.point -= 1000
             print(f"[AGENT] Agent died moving from {old_pos} to {next_pos}")
-            
+            return False
         return True
 
     def finished(self):
