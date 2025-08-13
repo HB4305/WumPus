@@ -1,5 +1,6 @@
 from .planner_random import dfs_search
 from .utils_random import get_neighbors
+from .inferences_random import InferenceRandom
 import random
 class AgentRandom:
     def __init__(self, env, inference):
