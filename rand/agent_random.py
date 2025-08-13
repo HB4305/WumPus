@@ -92,6 +92,13 @@ class AgentRandom:
             return True
         return False
 
+    def backtrack_next(self):
+        """Lấy ô trước đó theo lịch sử self.path (None nếu không có)."""
+        if len(self.path) < 2:
+            return None
+        return self.path[-2]   # path[-1] là vị trí hiện tại
+
+    
     def step(self):
         # if self.escaped or self.dead:
         #     return "STAY"
@@ -189,24 +196,25 @@ class AgentRandom:
 
         # ---- RETURN HOME IF NOTHING ELSE ----
         if not self.has_gold and (self.x, self.y) != (0, 0):
-            path_home = dfs_search((self.x, self.y), (0, 0),
-                                     self.inference.is_safe, self.env.size)
-            if path_home:
-                next_pos = path_home[0]
-                target_dir = self.get_direction_to(path_home[0])
+            # BACKTRACK THE SURE WAY: dùng lịch sử self.path (không phụ thuộc vào dfs/inference)
+            next_pos = self.backtrack_next()
+            if next_pos:
+                target_dir = self.get_direction_to(next_pos)
                 if self.direction != target_dir:
                     return self.turn_towards(target_dir)
                 if self.move_to(next_pos):
                     return "MOVE"
-                return "DIE" 
-        next_pos = self._get_direction_toward_home_risky()
-        if next_pos:
-            target_dir = self.get_direction_to(next_pos)
-            if self.direction != target_dir:
-                return self.turn_towards(target_dir)
-            if self.move_to(next_pos):
-                return "MOVE"
-            return "DIE"
+                return "DIE"
+            # Nếu không có history để backtrack (hiếm vì path khởi tạo [(0,0)]), fallback risky:
+            next_pos = self._get_direction_toward_home_risky()
+            if next_pos:
+                target_dir = self.get_direction_to(next_pos)
+                if self.direction != target_dir:
+                    return self.turn_towards(target_dir)
+                if self.move_to(next_pos):
+                    return "MOVE"
+                return "DIE"
+
         
         if self.x == 0 and self.y == 0:
             self.climb_out()
@@ -368,20 +376,34 @@ class AgentRandom:
         return False
 
     def move_to(self, next_pos):
-        """Move agent to next position"""
-        # Double-check safety before moving
-        if not self.is_move_safe(next_pos):
+        """Move agent to next position; nếu đang backtrack theo lịch sử thì pop last, không append."""
+        # Cho phép backtrack qua ô đã visited; nếu ô chưa visited thì vẫn require is_move_safe
+        if not self.is_move_safe(next_pos) and not self.inference.kb.get(next_pos, {}).get('visited', False):
             print(f"[AGENT] Warning: Attempting unsafe move to {next_pos}")
             return False
-            
+
         old_pos = (self.x, self.y)
+
+        # Nếu prev in path là next_pos => đây là backtrack: pop last element thay vì append
+        if len(self.path) >= 2 and self.path[-2] == next_pos:
+            # backtrack thực sự: loại bỏ vị trí hiện tại khỏi lịch sử
+            self.path.pop()
+        else:
+            # normal forward move: append
+            self.path.append(next_pos)
+
+        # cập nhật vị trí
         self.x, self.y = next_pos
-        self.path.append(next_pos)
-        
+
+        # thực hiện move lên environment
         result = self.env.move_agent(self.x, self.y)
         self.action_log.append(f"MOVE to {next_pos}")
         self.point -= 1
-        
+
+        # mark visited ngay khi move thành công
+        kb_entry = self.inference.kb.setdefault((self.x, self.y), {})
+        kb_entry['visited'] = True
+
         # Check for death after moving
         if self.check_death():
             self.dead = True
@@ -389,6 +411,7 @@ class AgentRandom:
             print(f"[AGENT] Agent died moving from {old_pos} to {next_pos}")
             return False
         return True
+
 
     def finished(self):
         return self.escaped or self.dead

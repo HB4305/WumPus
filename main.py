@@ -7,6 +7,8 @@ from advanced.agent_advanced import AgentAdvanced
 from advanced.inference_advanced import InferenceAdvanced
 from advanced.environment_advanced import EnvironmentAdvanced
 from rand.agent_random import AgentRandom
+from rand.environment_random import EnvironmentRandom
+from rand.inferences_random import InferenceRandom
 from rand_advanced.inferences_random_advanced import InferenceRandomAdvanced
 from rand_advanced.environment_random_advanced import EnvironmentRandomAdvanced
 from rand_advanced.agent_random_advanced import AgentRandomAdvanced
@@ -158,9 +160,9 @@ def main():
 
             # Tạo lại environment cho agent 2 từ map gốc
             #Agent 2 ramdom 
-            env2 = Environment(size=size, k=wumpus_count, pit_prob=pit_prob)
+            env2 = EnvironmentRandom(size=size, k=wumpus_count, pit_prob=pit_prob)
             env2.grid = copy.deepcopy(original_grid)  # Gán lại map gốc
-            inference2 = Inference(size, env2)
+            inference2 = InferenceRandom(size, env2)
             agent2 = AgentRandom(env2, inference2)
             MAPS2, RESULT2 = [copy.deepcopy(env2.grid)], []
             step_count2 = 0
