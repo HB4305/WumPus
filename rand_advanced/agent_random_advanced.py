@@ -1,5 +1,6 @@
 from rand.planner_random import dfs_search
 from rand.utils_random import get_neighbors
+from .environment_random_advanced import EnvironmentRandomAdvanced
 import random
 
 class AgentRandomAdvanced:
@@ -102,6 +103,7 @@ class AgentRandomAdvanced:
         self.action_log.append(f"MOVE to {next_pos}")
         self.point -= 1
 
+        print(f"[AGENT_ADVANCED] Moving")
         self._increment_action()
 
         if self.check_death():
@@ -443,6 +445,7 @@ class AgentRandomAdvanced:
         result = self.env.move_agent(self.x, self.y)
         self.action_log.append(f"MOVE to {next_pos}")
         self.point -= 1
+        self._increment_action()
 
         # mark visited ngay khi move thành công
         kb_entry = self.inference.kb.setdefault((self.x, self.y), {})
