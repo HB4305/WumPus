@@ -121,9 +121,19 @@ class AgentRandomAdvanced:
             return True
         return False
 
+    def backtrack_next(self):
+        """Lấy ô trước đó theo lịch sử self.path (None nếu không có)."""
+        if len(self.path) < 2:
+            return None
+        return self.path[-2]   # path[-1] là vị trí hiện tại
+
+    
     def step(self):
         # if self.escaped or self.dead:
         #     return "STAY"
+        
+        # if self.x == 0 and self.y == 0 and len(self.path) > 1:
+        
 
         if self.check_death():
             self.dead = True
@@ -136,119 +146,132 @@ class AgentRandomAdvanced:
         # ---- GRAB GOLD ----
         if percepts["glitter"] and not self.has_gold:
             self.has_gold = True
-            result = self.env.grab_gold()
-            if result.get("eaten", False):
-                self.dead = True
-                return "DIE"
+            self.env.grab_gold()
             self.action_log.append("GRAB")
             self.point += 10
-            # self._increment_action()
             return "GRAB"
 
         # ---- CLIMB OUT ----
         if self.has_gold and (self.x, self.y) == (0, 0):
             result = self.env.climb_out()
-            if result.get("eaten", False):
-                self.dead = True
-                return "DIE"
             self.escaped = result["escaped"]
-            self.point += 1000
             self.action_log.append("CLIMB")
-            # self._increment_action()
+            if self.escaped:
+                self.point += 1000
             return "CLIMB"
 
         # ---- GO HOME WITH GOLD ----
         if self.has_gold:
+            # 1) Thử backtrack theo lịch sử (chắc chắn)
+            next_pos = self.backtrack_next()
+            if next_pos:
+                # bật cờ để agent biết đang quay về (nếu bạn có dùng cờ)
+                try:
+                    self.backtracking_home = True
+                except Exception:
+                    pass
+
+                target_dir = self.get_direction_to(next_pos)
+                if self.direction != target_dir:
+                    return self.turn_towards(target_dir)  # xoay trước
+                # move_to đã xử lý pop/append phù hợp khi backtracking
+                if self.move_to(next_pos):
+                    return "MOVE"
+                return "DIE"
+
+            # 2) Nếu không có history (hiếm) => fallback: thử dùng dfs search an toàn
             path_home = dfs_search((self.x, self.y), (0, 0),
-                                    self.inference.is_safe, self.env.size)
+                                     self.inference.is_safe, self.env.size)
             if path_home:
                 next_pos = path_home[0]
                 target_dir = self.get_direction_to(next_pos)
                 if self.direction != target_dir:
-                    return self.turn_towards(target_dir)
-                if self.is_move_safe(next_pos):
-                    # self.move_to(next_pos)
-                    move_result = self.move_to(next_pos)
-                    if not move_result:  # Nếu move_to trả về False (agent chết)
-                        return "DIE"
-                    return "MOVE"
+                    return self.turn_towards(target_dir)  # xoay trước
+                # cho phép di chuyển nếu an toàn hoặc ô đó đã từng visited (fallback)
+                if self.is_move_safe(next_pos) or self.inference.kb.get(next_pos, {}).get('visited', False):
+                    if self.move_to(next_pos):
+                        return "MOVE"
+                    return "DIE"
                 return "STUCK"
+            # không tìm được đường nào
             return "STUCK"
 
         # ---- SHOOT WUMPUS ----
         if self.has_arrow and percepts["stench"] and self.can_shoot_wumpus_safely():
             target_dir = self.get_wumpus_direction()
             if target_dir and self.direction != target_dir:
-                return self.turn_towards(target_dir)
+                return self.turn_towards(target_dir)  # xoay trước khi bắn
             result = self.env.shoot_arrow(self.direction)
-            if result.get("eaten", False):
-                self.dead = True
-                return "DIE"
             self.has_arrow = False
             self.point -= 10
             if result["scream"]:
                 self.inference.remove_wumpus_after_kill((self.x, self.y), self.direction)
                 self.action_log.append("SHOOT_HIT")
-                # self._increment_action()
                 return "SHOOT_HIT"
             else:
                 self.action_log.append("SHOOT_MISS")
-                # self._increment_action()
                 return "SHOOT_MISS"
 
         # ---- MOVE TO SAFE NEIGHBOR ----
         safe_neighbors = self.get_truly_safe_neighbors()
         if safe_neighbors:
-            best_neighbor = self.choose_best_neighbor(safe_neighbors)
+            best_neighbor = self.choose_best_neighbor(safe_neighbors) # ưu tiên ô gần trung tâm
             target_dir = self.get_direction_to(best_neighbor)
             if self.direction != target_dir:
-                return self.turn_towards(target_dir)
+                return self.turn_towards(target_dir)  # xoay trước khi đi
             # self.move_to(best_neighbor)
             move_result = self.move_to(best_neighbor)
             if not move_result:  # Nếu move_to trả về False (agent chết)
                 return "DIE"
             return "MOVE"
-        
-        # ---- MOVE TO SAFE UNVISITED ANYWHERE ----
-        safe_unvisited = [
-            pos for pos, info in self.inference.kb.items()
-            if info['safe'] and not info['visited']
-        ]
-        if safe_unvisited:
-            safe_unvisited.sort(key=lambda p: abs(p[0] - self.x) + abs(p[1] - self.y))
-            target = safe_unvisited[0]
-            path_to_target = dfs_search((self.x, self.y), target,
-                                        self.inference.is_safe, self.env.size)
-            if path_to_target:
-                target_dir = self.get_direction_to(path_to_target[0])
+
+        # ---- EXPLORE SAFE UNKNOWN ----
+        exploration_target = self.find_safe_exploration_target()
+        if exploration_target:
+            path = dfs_search((self.x, self.y), exploration_target,
+                                self.inference.is_safe, self.env.size)
+            if path:
+                target_dir = self.get_direction_to(path[0])
                 if self.direction != target_dir:
                     return self.turn_towards(target_dir)
-                if self.is_move_safe(path_to_target[0]):
-                    # self.move_to(path_to_target[0])
-                    move_result = self.move_to(path_to_target[0])
+                if self.is_move_safe(path[0]):
+                    # self.move_to(path[0])
+                    move_result = self.move_to(path[0])
                     if not move_result:  # Nếu move_to trả về False (agent chết)
                         return "DIE"
                     return "MOVE"
-                
-        if self.x == 0 and self.y == 0:
-            self.climb_out()
-            return "CLIMB"
 
         # ---- RETURN HOME IF NOTHING ELSE ----
         if not self.has_gold and (self.x, self.y) != (0, 0):
-            path_home = dfs_search((self.x, self.y), (0, 0),
-                                    self.inference.is_safe, self.env.size)
-            if path_home:
-                target_dir = self.get_direction_to(path_home[0])
+            # BACKTRACK THE SURE WAY: dùng lịch sử self.path (không phụ thuộc vào dfs/inference)
+            next_pos = self.backtrack_next()
+            if next_pos:
+                target_dir = self.get_direction_to(next_pos)
                 if self.direction != target_dir:
                     return self.turn_towards(target_dir)
-                if self.is_move_safe(path_home[0]):
-                    # self.move_to(path_home[0])
-                    move_result = self.move_to(path_home[0])
-                    if not move_result:  # Nếu move_to trả về False (agent chết)
-                        return "DIE"
+                if self.move_to(next_pos):
                     return "MOVE"
+                return "DIE"
+            # Nếu không có history để backtrack (hiếm vì path khởi tạo [(0,0)]), fallback risky:
+            next_pos = self._get_direction_toward_home_risky()
+            if next_pos:
+                target_dir = self.get_direction_to(next_pos)
+                if self.direction != target_dir:
+                    return self.turn_towards(target_dir)
+                if self.move_to(next_pos):
+                    return "MOVE"
+                return "DIE"
 
+        
+        if self.x == 0 and self.y == 0:
+            self.climb_out()
+            return "CLIMB"
+        
+
+        # ---- HANDLE BREEZE ----
+        if percepts["breeze"]:
+            self._handle_breeze_situation()
+        
         return "STAY"
 
     # Các hàm phụ (check_death, is_move_safe, get_truly_safe_neighbors, get_direction_to, get_wumpus_direction,
@@ -397,36 +420,40 @@ class AgentRandomAdvanced:
         return False
 
     def move_to(self, next_pos):
-        """Move agent to next position"""
-        # Double-check safety before moving
-        if not self.is_move_safe(next_pos):
+        """Move agent to next position; nếu đang backtrack theo lịch sử thì pop last, không append."""
+        # Cho phép backtrack qua ô đã visited; nếu ô chưa visited thì vẫn require is_move_safe
+        if not self.is_move_safe(next_pos) and not self.inference.kb.get(next_pos, {}).get('visited', False):
             print(f"[AGENT] Warning: Attempting unsafe move to {next_pos}")
             return False
-            
-        old_pos = (self.x, self.y)
-        self.x, self.y = next_pos
-        self.path.append(next_pos)
-        
-        result = self.env.move_agent(self.x, self.y)
-        if result.get("eaten", False):
-            self.dead = True
-            #####
 
-            ####3
-            print(f"[AGENT_ADVANCED] Agent eaten by Wumpus while moving to {next_pos}")
-            return False
+        old_pos = (self.x, self.y)
+
+        # Nếu prev in path là next_pos => đây là backtrack: pop last element thay vì append
+        if len(self.path) >= 2 and self.path[-2] == next_pos:
+            # backtrack thực sự: loại bỏ vị trí hiện tại khỏi lịch sử
+            self.path.pop()
+        else:
+            # normal forward move: append
+            self.path.append(next_pos)
+
+        # cập nhật vị trí
+        self.x, self.y = next_pos
+
+        # thực hiện move lên environment
+        result = self.env.move_agent(self.x, self.y)
         self.action_log.append(f"MOVE to {next_pos}")
         self.point -= 1
-        
-        self._increment_action()
+
+        # mark visited ngay khi move thành công
+        kb_entry = self.inference.kb.setdefault((self.x, self.y), {})
+        kb_entry['visited'] = True
+
         # Check for death after moving
         if self.check_death():
             self.dead = True
             self.point -= 1000
             print(f"[AGENT] Agent died moving from {old_pos} to {next_pos}")
-            ##########33
             return False
-        ##############
         return True
 
     def finished(self):

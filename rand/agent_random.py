@@ -134,6 +134,24 @@ class AgentRandom:
 
         # ---- GO HOME WITH GOLD ----
         if self.has_gold:
+            # 1) Thử backtrack theo lịch sử (chắc chắn)
+            next_pos = self.backtrack_next()
+            if next_pos:
+                # bật cờ để agent biết đang quay về (nếu bạn có dùng cờ)
+                try:
+                    self.backtracking_home = True
+                except Exception:
+                    pass
+
+                target_dir = self.get_direction_to(next_pos)
+                if self.direction != target_dir:
+                    return self.turn_towards(target_dir)  # xoay trước
+                # move_to đã xử lý pop/append phù hợp khi backtracking
+                if self.move_to(next_pos):
+                    return "MOVE"
+                return "DIE"
+
+            # 2) Nếu không có history (hiếm) => fallback: thử dùng dfs search an toàn
             path_home = dfs_search((self.x, self.y), (0, 0),
                                      self.inference.is_safe, self.env.size)
             if path_home:
@@ -141,14 +159,15 @@ class AgentRandom:
                 target_dir = self.get_direction_to(next_pos)
                 if self.direction != target_dir:
                     return self.turn_towards(target_dir)  # xoay trước
-                if self.is_move_safe(next_pos):
-                    # self.move_to(next_pos)
-                    move_result = self.move_to(next_pos)
-                    if not move_result:  # Nếu move_to trả về False (agent chết)
-                        return "DIE"
-                    return "MOVE"
+                # cho phép di chuyển nếu an toàn hoặc ô đó đã từng visited (fallback)
+                if self.is_move_safe(next_pos) or self.inference.kb.get(next_pos, {}).get('visited', False):
+                    if self.move_to(next_pos):
+                        return "MOVE"
+                    return "DIE"
                 return "STUCK"
+            # không tìm được đường nào
             return "STUCK"
+
 
         # ---- SHOOT WUMPUS ----
         if self.has_arrow and percepts["stench"] and self.can_shoot_wumpus_safely():
