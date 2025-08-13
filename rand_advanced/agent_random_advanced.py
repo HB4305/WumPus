@@ -92,25 +92,25 @@ class AgentRandomAdvanced:
         return target_dir
 
 
-    def move_to(self, next_pos):
-        if not self.is_move_safe(next_pos):
-            print(f"[AGENT_ADVANCED] Warning: unsafe move to {next_pos}")
-            return False
-        old_pos = (self.x, self.y)
-        self.x, self.y = next_pos
-        self.path.append(next_pos)
-        result = self.env.move_agent(self.x, self.y)
-        self.action_log.append(f"MOVE to {next_pos}")
-        self.point -= 1
+    # def move_to(self, next_pos):
+    #     if not self.is_move_safe(next_pos):
+    #         print(f"[AGENT_ADVANCED] Warning: unsafe move to {next_pos}")
+    #         return False
+    #     old_pos = (self.x, self.y)
+    #     self.x, self.y = next_pos
+    #     self.path.append(next_pos)
+    #     result = self.env.move_agent(self.x, self.y)
+    #     self.action_log.append(f"MOVE to {next_pos}")
+    #     self.point -= 1
 
-        print(f"[AGENT_ADVANCED] Moving")
-        self._increment_action()
+    #     print(f"[AGENT_ADVANCED] Moving")
+    #     self._increment_action()
 
-        if self.check_death():
-            self.dead = True
-            self.point -= 1000
-            print(f"[AGENT_ADVANCED] Agent died moving from {old_pos} to {next_pos}")
-        return True
+    #     if self.check_death():
+    #         self.dead = True
+    #         self.point -= 1000
+    #         print(f"[AGENT_ADVANCED] Agent died moving from {old_pos} to {next_pos}")
+    #     return True
     
     def climb_out(self):
         """Climb out of the cave"""
