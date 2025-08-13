@@ -129,10 +129,6 @@ class AgentRandomAdvanced:
 
     
     def step(self):
-        # if self.escaped or self.dead:
-        #     return "STAY"
-        
-        # if self.x == 0 and self.y == 0 and len(self.path) > 1:
         
 
         if self.check_death():
@@ -162,10 +158,9 @@ class AgentRandomAdvanced:
 
         # ---- GO HOME WITH GOLD ----
         if self.has_gold:
-            # 1) Thử backtrack theo lịch sử (chắc chắn)
             next_pos = self.backtrack_next()
             if next_pos:
-                # bật cờ để agent biết đang quay về (nếu bạn có dùng cờ)
+           
                 try:
                     self.backtracking_home = True
                 except Exception:
@@ -174,12 +169,10 @@ class AgentRandomAdvanced:
                 target_dir = self.get_direction_to(next_pos)
                 if self.direction != target_dir:
                     return self.turn_towards(target_dir)  # xoay trước
-                # move_to đã xử lý pop/append phù hợp khi backtracking
+               
                 if self.move_to(next_pos):
                     return "MOVE"
                 return "DIE"
-
-            # 2) Nếu không có history (hiếm) => fallback: thử dùng dfs search an toàn
             path_home = dfs_search((self.x, self.y), (0, 0),
                                      self.inference.is_safe, self.env.size)
             if path_home:
@@ -243,7 +236,7 @@ class AgentRandomAdvanced:
 
         # ---- RETURN HOME IF NOTHING ELSE ----
         if not self.has_gold and (self.x, self.y) != (0, 0):
-            # BACKTRACK THE SURE WAY: dùng lịch sử self.path (không phụ thuộc vào dfs/inference)
+          
             next_pos = self.backtrack_next()
             if next_pos:
                 target_dir = self.get_direction_to(next_pos)
@@ -252,7 +245,6 @@ class AgentRandomAdvanced:
                 if self.move_to(next_pos):
                     return "MOVE"
                 return "DIE"
-            # Nếu không có history để backtrack (hiếm vì path khởi tạo [(0,0)]), fallback risky:
             next_pos = self._get_direction_toward_home_risky()
             if next_pos:
                 target_dir = self.get_direction_to(next_pos)
@@ -274,29 +266,6 @@ class AgentRandomAdvanced:
         
         return "STAY"
 
-    # Các hàm phụ (check_death, is_move_safe, get_truly_safe_neighbors, get_direction_to, get_wumpus_direction,
-    # choose_best_neighbor, can_shoot_wumpus_safely, ... ) giữ nguyên từ class Agent của bạn
-    # Chỉ cần copy lại nguyên, thêm hoặc sửa nơi gọi _increment_action khi có hành động
-
-    # Ví dụ hàm check_death
-    # def check_death(self):
-    #     current_cell = self.env.grid[self.y][self.x]
-    #     return current_cell.pit or current_cell.wumpus
-
-    # def is_move_safe(self, next_pos):
-    #     next_x, next_y = next_pos
-    #     if not (0 <= next_x < self.env.size and 0 <= next_y < self.env.size):
-    #         return False
-    #     if (next_x, next_y) in self.inference.confirmed_pits:
-    #         return False
-    #     if (next_x, next_y) in self.inference.confirmed_wumpus:
-    #         return False
-    #     kb_info = self.inference.kb.get((next_x, next_y), {})
-    #     if kb_info.get('visited', False):
-    #         return True
-    #     if not kb_info.get('possible_pit', False) and not kb_info.get('possible_wumpus', False):
-    #         return True
-    #     return False
 
     def check_death(self):
         """Check if agent is in a deadly cell"""

@@ -136,10 +136,9 @@ class AgentRandom:
 
         # ---- GO HOME WITH GOLD ----
         if self.has_gold:
-            # 1) Thử backtrack theo lịch sử (chắc chắn)
             next_pos = self.backtrack_next()
             if next_pos:
-                # bật cờ để agent biết đang quay về (nếu bạn có dùng cờ)
+            
                 try:
                     self.backtracking_home = True
                 except Exception:
@@ -148,12 +147,10 @@ class AgentRandom:
                 target_dir = self.get_direction_to(next_pos)
                 if self.direction != target_dir:
                     return self.turn_towards(target_dir)  # xoay trước
-                # move_to đã xử lý pop/append phù hợp khi backtracking
+              
                 if self.move_to(next_pos):
                     return "MOVE"
                 return "DIE"
-
-            # 2) Nếu không có history (hiếm) => fallback: thử dùng dfs search an toàn
             path_home = dfs_search((self.x, self.y), (0, 0),
                                      self.inference.is_safe, self.env.size)
             if path_home:
@@ -161,13 +158,11 @@ class AgentRandom:
                 target_dir = self.get_direction_to(next_pos)
                 if self.direction != target_dir:
                     return self.turn_towards(target_dir)  # xoay trước
-                # cho phép di chuyển nếu an toàn hoặc ô đó đã từng visited (fallback)
                 if self.is_move_safe(next_pos) or self.inference.kb.get(next_pos, {}).get('visited', False):
                     if self.move_to(next_pos):
                         return "MOVE"
                     return "DIE"
                 return "STUCK"
-            # không tìm được đường nào
             return "STUCK"
 
 
@@ -220,7 +215,6 @@ class AgentRandom:
 
         # ---- RETURN HOME IF NOTHING ELSE ----
         if not self.has_gold and (self.x, self.y) != (0, 0):
-            # BACKTRACK THE SURE WAY: dùng lịch sử self.path (không phụ thuộc vào dfs/inference)
             next_pos = self.backtrack_next()
             if next_pos:
                 target_dir = self.get_direction_to(next_pos)
@@ -229,7 +223,6 @@ class AgentRandom:
                 if self.move_to(next_pos):
                     return "MOVE"
                 return "DIE"
-            # Nếu không có history để backtrack (hiếm vì path khởi tạo [(0,0)]), fallback risky:
             next_pos = self._get_direction_toward_home_risky()
             if next_pos:
                 target_dir = self.get_direction_to(next_pos)
