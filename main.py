@@ -139,6 +139,7 @@ def main():
             # Tạo environment và lưu lại map gốc
             env = Environment(size=size, k=wumpus_count, pit_prob=pit_prob)
             original_grid = copy.deepcopy(env.grid)  # Lưu map gốc
+            original_wumpus_positions = env.wumpus_positions.copy()
 
             # Agent 1 A* RUN 
             inference1 = Inference(size, env)
@@ -162,6 +163,7 @@ def main():
             #Agent 2 ramdom 
             env2 = EnvironmentRandom(size=size, k=wumpus_count, pit_prob=pit_prob)
             env2.grid = copy.deepcopy(original_grid)  # Gán lại map gốc
+            env2.wumpus_positions = original_wumpus_positions.copy()  # Gán lại vị trí wumpus gốc
             inference2 = InferenceRandom(size, env2)
             agent2 = AgentRandom(env2, inference2)
             MAPS2, RESULT2 = [copy.deepcopy(env2.grid)], []
