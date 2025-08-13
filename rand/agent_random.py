@@ -1,6 +1,7 @@
 from .planner_random import dfs_search
 from .utils_random import get_neighbors
 from .inferences_random import InferenceRandom
+from .environment_random import EnvironmentRandom 
 import random
 class AgentRandom:
     def __init__(self, env, inference):
@@ -10,6 +11,7 @@ class AgentRandom:
         self.direction = "EAST"
         self.has_gold = False
         self.has_arrow = True
+        # self.arrow_available = True
         self.point = 0
         self.path = [(0, 0)]
         self.action_log = []
@@ -178,10 +180,12 @@ class AgentRandom:
             self.has_arrow = False
             self.point -= 10
             if result["scream"]:
+                print(f"[AGENT] Wumpus killed")
                 self.inference.remove_wumpus_after_kill((self.x, self.y), self.direction)
                 self.action_log.append("SHOOT_HIT")
                 return "SHOOT_HIT"
             else:
+                print(f"[AGENT] Wumpus missed")
                 self.action_log.append("SHOOT_MISS")
                 return "SHOOT_MISS"
 

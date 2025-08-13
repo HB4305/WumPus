@@ -107,7 +107,7 @@ class EnvironmentRandom:
     #         self.agent_dir = dirs[(idx + 1) % 4]
 
     def shoot_arrow(self, direction):
-        print("[ENV] Agent shoots an arrow")
+        print("[ENV] Agent shoots an arrow from random")
         if not self.arrow_available:
             return {"scream": False, **self.get_percepts()}
         self.arrow_available = False
@@ -121,9 +121,11 @@ class EnvironmentRandom:
 
         scream = False
         while self.in_bounds(x + dx, y + dy):
+            print(f"[ENV] Shooting arrow at ({x + dx}, {y + dy})")
             x += dx
             y += dy
             if (x, y) in self.wumpus_positions:
+                print(f"[ENV] Wumpus found at ({x}, {y})")
                 self.wumpus_positions.remove((x, y))
                 self.grid[y][x].wumpus = False
                 # remove stench from neighbors
