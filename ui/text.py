@@ -62,6 +62,6 @@ class Info(Text_Display):
 
     def showLeftBar(self, choose_map_result, score=0):
         area = (self.left_margin-20, 0, WINDOW_WIDTH-(self.left_margin-20), SHOW_NOTI_HEIGHT)
-        showGameBackground(self.screen, area, self.level_background)
+        showGameBackground(self.screen, area)
         self.showMapInfo(choose_map_result)
         self.showScore(score)

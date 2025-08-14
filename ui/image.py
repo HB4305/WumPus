@@ -3,10 +3,10 @@ from pygame.locals import *
 from ui.constants import *
 from ui.text import *
 
-def showGameBackground(screen, area=None, level=1):
+def showGameBackground(screen, area=None):
     #https://wallpapercave.com/w/wp7326071
     #area: (pos_x, pos_y, width, height)
-    background = pygame.image.load(f'ui/assets/game_background_{level % 5}.jpg')
+    background = pygame.image.load(f'ui/assets/game_background.jpg')
     background = pygame.transform.scale(background, (WINDOW_WIDTH, WINDOW_HEIGHT))
     if area == None:
         screen.blit(background, (0, 0))
@@ -84,12 +84,6 @@ class ImageElement:
         self.pit_img = pygame.transform.scale(self.pit_img, self.cell_size)
         self.breeze_img = pygame.image.load('ui/assets/breeze.png')
         self.breeze_img = pygame.transform.scale(self.breeze_img, self.cell_size)
-
-        # Add placeholder images for missing elements
-        self.poisonous_gas_img = self.pit_img  # Use pit image as placeholder
-        self.whiff_img = self.breeze_img       # Use breeze image as placeholder
-        self.healing_potion_img = self.gold_img # Use gold image as placeholder
-        self.glow_img = self.stench_img        # Use stench image as placeholder
         
         # Create faded versions for unknown cells (30% opacity)
         self.faded_wumpus_img = self.wumpus_img.copy()
@@ -348,7 +342,7 @@ class Map(ImageElement):
         if 'W' in element:
             self.showWumpus(y, x, self.h)
             main_element_shown = True
-        elif 'P' in element and 'P_G' not in element:
+        elif 'P' in element:
             self.showPit(y, x, self.h)
             main_element_shown = True
 

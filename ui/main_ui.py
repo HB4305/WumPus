@@ -184,7 +184,7 @@ def showMenu():
 
 def showWumpusWorld(map_data):
     M1 = Map(screen, map_data)
-    showGameBackground(screen, level=1)
+    showGameBackground(screen)
     M1.showUnknownBoard()
     M1.showPath(0, 0)
     I1 = Info(screen, level=1)
@@ -316,7 +316,7 @@ def showAgentMove(_, path, maps_data, __, list_env, agent_mode, agent_index=0):
     killed_wumpus_positions = set()
 
     # Initialize display
-    showGameBackground(screen, level=1)
+    showGameBackground(screen)
     M2.showUnknownBoard()
     M2.showPath(0, 0)
     M2.showAgent(0, 0, M2.h)
@@ -533,9 +533,6 @@ def showAgentMove(_, path, maps_data, __, list_env, agent_mode, agent_index=0):
             arrow_x, arrow_y = x, y
             hit_target = False
             arrow_path = []
-            
-             # Track visited cells up to current step
-    
             # Đối với SHOOT_HIT, trước tiên tìm vị trí Wumpus đầu tiên trên đường đi
             target_x, target_y = None, None
             if action == 'SHOOT_HIT':
@@ -662,7 +659,7 @@ def showAgentMove(_, path, maps_data, __, list_env, agent_mode, agent_index=0):
                 else:
                     M2.updateMap(maps[count_map])
                 
-                showGameBackground(screen, level=1)
+                showGameBackground(screen)
                 M2.showUnknownBoard()
                 
                 for pos_x, pos_y in visited_positions:
@@ -725,7 +722,7 @@ def showAgentMove(_, path, maps_data, __, list_env, agent_mode, agent_index=0):
         
 
         M2.updateMap(maps[count_map])
-        showGameBackground(screen, level=1)
+        showGameBackground(screen)
         M2.showUnknownBoard()
         for pos_x, pos_y in visited_positions:
             M2.showPath(pos_x, pos_y)
@@ -811,7 +808,7 @@ def showAgentMove(_, path, maps_data, __, list_env, agent_mode, agent_index=0):
                                 restored_map.append(restored_row)
                             maps.append(restored_map)
                         
-                        showGameBackground(screen, level=1)
+                        showGameBackground(screen)
                         M2 = Map(screen, maps[0] if maps else [])
                         M2.showUnknownBoard()
                         M2.showPath(0, 0)
@@ -832,10 +829,6 @@ def showAgentMove(_, path, maps_data, __, list_env, agent_mode, agent_index=0):
                 auto_play_timer = 0
                 if current_step >= len(path):
                     auto_play = False
-
-
-
-
         # Draw everything
         draw_action_info(agent_index)
         draw_buttons()
