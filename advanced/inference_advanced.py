@@ -6,7 +6,6 @@ class InferenceAdvanced(Inference):
     def __init__(self, size, environment):
         super().__init__(size, environment)
         self.last_wumpus_positions = set()
-        self.action_count = 0
 
     def update_wumpus_positions_after_move(self, agent_pos):
         """
