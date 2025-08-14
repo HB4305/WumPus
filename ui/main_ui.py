@@ -534,6 +534,25 @@ def showAgentMove(_, path, maps_data, __, list_env, agent_mode, agent_index=0):
             hit_target = False
             arrow_path = []
             
+             # Track visited cells up to current step
+    
+            # Đối với SHOOT_HIT, trước tiên tìm vị trí Wumpus đầu tiên trên đường đi
+            target_x, target_y = None, None
+            if action == 'SHOOT_HIT':
+                temp_x, temp_y = x, y
+                while True:
+                    temp_x += dx
+                    temp_y += dy
+                    
+                    if temp_x < 0 or temp_x >= map_size or temp_y < 0 or temp_y >= map_size:
+                        break
+                        
+                    arrow_path.append((temp_x, temp_y))
+                    # Đây sẽ là vị trí Wumpus đầu tiên trên đường đi của mũi tên
+                    target_x, target_y = temp_x, temp_y
+                    break
+            
+            # Tiếp tục xử lý animation bắn tên
             while True:
                 arrow_x += dx
                 arrow_y += dy
@@ -541,6 +560,13 @@ def showAgentMove(_, path, maps_data, __, list_env, agent_mode, agent_index=0):
                 if arrow_x < 0 or arrow_x >= map_size or arrow_y < 0 or arrow_y >= map_size:
                     break
                 
+                if action == 'SHOOT_HIT' and arrow_x == target_x and arrow_y == target_y:
+                    hit_target = True
+                    M2.showShoot(arrow_y, arrow_x, M2.h)
+                    pygame.display.flip()
+                    pygame.time.wait(200)
+                    break
+                    
                 arrow_path.append((arrow_x, arrow_y))
                 
                 M2.showShoot(arrow_y, arrow_x, M2.h)
@@ -617,6 +643,18 @@ def showAgentMove(_, path, maps_data, __, list_env, agent_mode, agent_index=0):
                                         maps[map_idx][adj_y][adj_x][1] = False
                                     else:
                                         maps[map_idx][adj_y][adj_x].stench = False
+                # Store previous Wumpus positions before updating
+                previous_wumpus_positions = set()
+                for row_idx, row in enumerate(maps[count_map]):
+                    for col_idx, cell in enumerate(row):
+                        if isinstance(cell, list) and 'W' in cell[0]:
+                            previous_wumpus_positions.add((col_idx, row_idx))
+                        elif hasattr(cell, 'wumpus') and cell.wumpus:
+                            previous_wumpus_positions.add((col_idx, row_idx))
+            
+                # Update map with new environment
+                maps[count_map - 1] = env_maps[index_env + 1]
+                
                 
                 if count_map + 1 < len(maps):
                     M2.updateMap(maps[count_map + 1])
