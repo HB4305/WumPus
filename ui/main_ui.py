@@ -524,7 +524,7 @@ def showAgentMove(_, path, maps_data, __, list_env, agent_mode, agent_index=0):
                         M2.showUnknown(arrow_y, arrow_x, M2.h)
             
             # Handle hit result
-            if hit_target and action == 'SHOOT_HIT':
+            if action == 'SHOOT_HIT':
                 M2.showScream(arrow_y, arrow_x, M2.h)
                 pygame.display.flip()
                 pygame.time.wait(500)
