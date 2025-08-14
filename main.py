@@ -228,8 +228,7 @@ def main():
 
                 RESULT.append(((agent.x, agent.y), action, agent.point))
                 MAPS.append(copy.deepcopy(env.grid))
-                if step_count % 5 == 0 and step_count // 5 > 1:
-                    list_env.append(copy.deepcopy(env.grid))
+                list_env.append(copy.deepcopy(env.grid))
 
                 print(f"[MAIN] Step {step_count}: {action}, Score: {agent.point}")
                 if action == "DIE" or agent.dead:
@@ -287,9 +286,7 @@ def main():
                 step_count1 += 1
                 RESULT1.append(((agent1.x, agent1.y), action, agent1.point))
                 MAPS1.append(copy.deepcopy(env.grid))
-                
-                if step_count1 % 5 == 0 and step_count1 // 5 > 1:
-                    list_env1.append(copy.deepcopy(env.grid))
+                list_env1.append(copy.deepcopy(env.grid))
                 
                 print(f"[MAIN] Step {step_count1}: {action}, Score: {agent1.point}")
                 
@@ -333,9 +330,8 @@ def main():
                 step_count2 += 1
                 RESULT2.append(((agent2.x, agent2.y), action, agent2.point))
                 MAPS2.append(copy.deepcopy(env2.grid))
-                
-                if step_count2 % 5 == 0 and step_count2 // 5 > 1:
-                    list_env2.append(copy.deepcopy(env2.grid))
+
+                list_env2.append(copy.deepcopy(env2.grid))
                 
                 print(f"[MAIN] Step {step_count2}: {action}, Score: {agent2.point}")
                 
