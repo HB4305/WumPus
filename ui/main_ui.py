@@ -399,6 +399,55 @@ def showAgentMove(_, path, maps_data, __, list_env, agent_mode, agent_index=0):
         else:
             M2.showPath(0, 0)
 
+        if list_env and index_env < len(env_maps):
+            print(f"[ENV UPDATE] Loading new environment map at index {index_env}")
+    
+            # Store previous Wumpus positions before updating
+            previous_wumpus_positions = set()
+            for row_idx, row in enumerate(maps[count_map]):
+                for col_idx, cell in enumerate(row):
+                    if isinstance(cell, list) and 'W' in cell[0]:
+                        previous_wumpus_positions.add((col_idx, row_idx))
+                    elif hasattr(cell, 'wumpus') and cell.wumpus:
+                        previous_wumpus_positions.add((col_idx, row_idx))
+            
+            # Update map with new environment
+            maps[count_map] = env_maps[index_env]
+            index_env += 1
+            
+            # Update killed_wumpus_positions to reflect new reality
+            updated_killed_positions = set()
+            for kx, ky in killed_wumpus_positions:
+                # If this was a position where a Wumpus was killed,
+                # keep it marked as killed even if Wumpus moved
+                if (kx, ky) in previous_wumpus_positions:
+                    updated_killed_positions.add((kx, ky))
+            
+            killed_wumpus_positions = updated_killed_positions
+            
+            # Update the map symbols for Wumpus
+            for row in range(map_size):
+                for col in range(map_size):
+                    cell = maps[count_map][row][col]
+                    # If this position previously had a killed Wumpus, 
+                    # make sure it's still marked as empty
+                    if (col, row) in killed_wumpus_positions:
+                        if isinstance(cell, list):
+                            cell[0] = cell[0].replace('W', '')
+                            if cell[0] == '':
+                                cell[0] = '-'
+                        elif hasattr(cell, 'wumpus'):
+                            cell.wumpus = False
+                    # Otherwise update as normal
+                    elif getattr(cell, 'wumpus', False) or (isinstance(cell, list) and 'W' in cell[0]):
+                        if isinstance(cell, list):
+                            if 'W' not in cell[0]:
+                                cell[0] = cell[0].replace('-', '') + 'W'
+                    else:
+                        if isinstance(cell, list):
+                            cell[0] = cell[0].replace('W', '')
+                            if cell[0] == '':
+                                cell[0] = '-'
         x, y = path[i][0]
         action = path[i][1]
         current_action = action
@@ -452,9 +501,6 @@ def showAgentMove(_, path, maps_data, __, list_env, agent_mode, agent_index=0):
             current_action = "GRAB GOLD"
             has_gold = True
             M2.showGold(y, x, M2.h)
-            if count_map + 1 < len(maps):
-                M2.updateMap(maps[count_map + 1])
-                count_map += 1
 
         elif action == 'Climb' or action == 'CLIMB':
             count_action += 1
@@ -524,7 +570,7 @@ def showAgentMove(_, path, maps_data, __, list_env, agent_mode, agent_index=0):
                         M2.showUnknown(arrow_y, arrow_x, M2.h)
             
             # Handle hit result
-            if action == 'SHOOT_HIT':
+            if hit_target and action == 'SHOOT_HIT':
                 M2.showScream(arrow_y, arrow_x, M2.h)
                 pygame.display.flip()
                 pygame.time.wait(500)
@@ -637,25 +683,8 @@ def showAgentMove(_, path, maps_data, __, list_env, agent_mode, agent_index=0):
                     M2.showAgent(final_y, final_x, M2.h)
         
         # Kiểm tra cập nhật môi trường từ list_env
+
         
-        if list_env and count_action % 5 == 1 and count_action // 5 >= 1 and index_env < len(env_maps):
-            print(index_env)
-            maps[count_map] = env_maps[index_env]
-            index_env += 1
-            # Cập nhật lại ký hiệu 'W' cho các ô có Wumpus mới
-            for row in range(map_size):
-                for col in range(map_size):
-                    cell = maps[count_map][row][col]
-                    # Nếu có Wumpus thì đảm bảo cell[0] chứa 'W'
-                    if getattr(cell, 'wumpus', False) or (isinstance(cell, list) and 'W' in cell[0]):
-                        if isinstance(cell, list):
-                            if 'W' not in cell[0]:
-                                cell[0] = cell[0].replace('-', '') + 'W'
-                    else:
-                        if isinstance(cell, list):
-                            cell[0] = cell[0].replace('W', '')
-                            if cell[0] == '':
-                                cell[0] = '-'
 
         M2.updateMap(maps[count_map])
         showGameBackground(screen, level=1)
