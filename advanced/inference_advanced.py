@@ -8,16 +8,6 @@ class InferenceAdvanced(Inference):
         self.last_wumpus_positions = set()
         self.action_count = 0
 
-    def update_knowledge(self, position, percept, action_count=None, agent_pos=None):
-        self.action_count = action_count if action_count is not None else self.action_count + 1
-
-        # Gọi lại hàm gốc update kiến thức pit/wumpus/thông thường
-        super().update_knowledge(position, percept)
-
-        # Khi đến bước hành động thứ 5, 10, 15,... Wumpus di chuyển
-        if self.action_count > 0 and self.action_count % 5 == 0:
-            self.update_wumpus_positions_after_move(agent_pos)
-
     def update_wumpus_positions_after_move(self, agent_pos):
         """
         Cập nhật vị trí Wumpus khả dĩ sau khi Wumpus di chuyển 1 ô.
