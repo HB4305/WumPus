@@ -10,7 +10,6 @@ class InferenceAdvanced(Inference):
     def update_wumpus_positions_after_move(self, agent_pos):
         """
         Cập nhật vị trí Wumpus khả dĩ sau khi Wumpus di chuyển 1 ô.
-        Nếu Wumpus di chuyển vào ô agent => báo agent chết bằng Exception.
         """
         new_possible_positions = set()
         previous_positions = self.last_wumpus_positions or self.get_possible_wumpus()
