@@ -182,19 +182,6 @@ class ImageElement:
         return drirection-1
 
 class Map(ImageElement):
-    """
-    This class is used to show the game map on the screen.
-
-    Attributes:
-        screen: The window screen to show the images on.
-        map_data (2D list): The data of the game map.
-            1 item of map_data is a list of 6 elements:
-            [element, stench, breeze, whiff, glow, scream]
-            [string, bool, bool, bool, bool, bool]
-        cell_side (int): The side length of each cell.
-        h (int): The height of the game map.
-        w (int): The width of the game map.
-    """
     def __init__(self, screen, map_data, cell_side=65):
         # Read and store map data
         self.map_data = copy.deepcopy(map_data)

@@ -660,7 +660,6 @@ def showAgentMove(_, path, maps_data, __, list_env, agent_mode, agent_index=0):
                 for pos_x, pos_y in visited_positions:
                     M2.showPath(pos_x, pos_y)
                 
-                # M2.showAgent(y, x, M2.h)
                 if not agent_died:
                     M2.showAgent(y, x, M2.h)
                 
@@ -685,7 +684,6 @@ def showAgentMove(_, path, maps_data, __, list_env, agent_mode, agent_index=0):
         elif action == 'DIE':
             count_action += 1
             current_action = "DIED"
-            # M2.showDie(y, x, M2.h)
             agent_died = True
             M2.showPath(y, x)  # Hiển thị ô đường đi
             M2.showDie(y, x, M2.h)  # Hiển thị mộ
