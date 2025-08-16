@@ -400,8 +400,6 @@ def showAgentMove(_, path, maps_data, __, list_env, agent_mode, agent_index=0):
             M2.showPath(0, 0)
 
         if list_env and index_env < len(env_maps):
-            print(f"[ENV UPDATE] Loading new environment map at index {index_env}")
-    
             # Store previous Wumpus positions before updating
             previous_wumpus_positions = set()
             for row_idx, row in enumerate(maps[count_map]):
