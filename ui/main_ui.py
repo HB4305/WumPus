@@ -400,6 +400,8 @@ def showAgentMove(_, path, maps_data, __, list_env, agent_mode, agent_index=0):
             M2.showPath(0, 0)
 
         if list_env and index_env < len(env_maps):
+            # print(f"[ENV UPDATE] Loading new environment map at index {index_env}")
+    
             # Store previous Wumpus positions before updating
             previous_wumpus_positions = set()
             for row_idx, row in enumerate(maps[count_map]):
@@ -475,6 +477,7 @@ def showAgentMove(_, path, maps_data, __, list_env, agent_mode, agent_index=0):
             dirs = ["NORTH", "WEST", "SOUTH", "EAST"]
             idx = dirs.index(current_direction)
             current_direction = dirs[(idx + 1) % 4]
+            # M2.showAgent(y, x, M2.h)
             if not agent_died and not (action in ['Climb', 'CLIMB'] and x == 0 and y == 0):
                 M2.showAgent(y, x, M2.h)
 
@@ -485,6 +488,7 @@ def showAgentMove(_, path, maps_data, __, list_env, agent_mode, agent_index=0):
             dirs = ["NORTH", "EAST", "SOUTH", "WEST"]
             idx = dirs.index(current_direction)
             current_direction = dirs[(idx + 1) % 4]
+            # M2.showAgent(y, x, M2.h)
             if not agent_died and not (action in ['Climb', 'CLIMB'] and x == 0 and y == 0):
                 M2.showAgent(y, x, M2.h)
 
@@ -504,6 +508,7 @@ def showAgentMove(_, path, maps_data, __, list_env, agent_mode, agent_index=0):
             if x == 0 and y == 0:
                 M2.showPath(y, x) 
                 agent_died = True
+                # Có thể thêm hiệu ứng climb out ở đây nếu cần
                 pygame.display.flip()
                 pygame.time.wait(500)
 
@@ -645,7 +650,8 @@ def showAgentMove(_, path, maps_data, __, list_env, agent_mode, agent_index=0):
                             previous_wumpus_positions.add((col_idx, row_idx))
             
                 # Update map with new environment
-                maps[count_map - 1] = env_maps[index_env]
+                if index_env + 1 < len(env_maps):
+                    maps[count_map - 1] = env_maps[index_env + 1]
                 
                 
                 if count_map + 1 < len(maps):
@@ -660,6 +666,7 @@ def showAgentMove(_, path, maps_data, __, list_env, agent_mode, agent_index=0):
                 for pos_x, pos_y in visited_positions:
                     M2.showPath(pos_x, pos_y)
                 
+                # M2.showAgent(y, x, M2.h)
                 if not agent_died:
                     M2.showAgent(y, x, M2.h)
                 
@@ -684,6 +691,7 @@ def showAgentMove(_, path, maps_data, __, list_env, agent_mode, agent_index=0):
         elif action == 'DIE':
             count_action += 1
             current_action = "DIED"
+            # M2.showDie(y, x, M2.h)
             agent_died = True
             M2.showPath(y, x)  # Hiển thị ô đường đi
             M2.showDie(y, x, M2.h)  # Hiển thị mộ
@@ -722,7 +730,6 @@ def showAgentMove(_, path, maps_data, __, list_env, agent_mode, agent_index=0):
         for kx, ky in killed_wumpus_positions:
             if 0 <= kx < map_size and 0 <= ky < map_size:
                 M2.showEmpty(ky, kx, M2.h)
-        
         if not agent_died:
         # Chỉ hiển thị agent nếu không ở trạng thái CLIMB tại (0,0)
             if not (action in ['Climb', 'CLIMB'] and x == 0 and y == 0):
