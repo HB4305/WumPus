@@ -647,7 +647,7 @@ def showAgentMove(_, path, maps_data, __, list_env, agent_mode, agent_index=0):
                             previous_wumpus_positions.add((col_idx, row_idx))
             
                 # Update map with new environment
-                maps[count_map - 1] = env_maps[index_env + 1]
+                maps[count_map - 1] = env_maps[index_env]
                 
                 
                 if count_map + 1 < len(maps):
