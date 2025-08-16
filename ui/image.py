@@ -4,8 +4,6 @@ from ui.constants import *
 from ui.text import *
 
 def showGameBackground(screen, area=None):
-    #https://wallpapercave.com/w/wp7326071
-    #area: (pos_x, pos_y, width, height)
     background = pygame.image.load(f'ui/assets/game_background.jpg')
     background = pygame.transform.scale(background, (WINDOW_WIDTH, WINDOW_HEIGHT))
     if area == None:
@@ -14,41 +12,11 @@ def showGameBackground(screen, area=None):
         screen.blit(background, (area[0], area[1]), area)
 
 def showMenuBackground(screen):
-    #https://wallpapersafari.com/w/nLIPZf/download
     background = pygame.image.load('ui/assets/menu_background.jpg')
     background = pygame.transform.scale(background, (WINDOW_WIDTH, WINDOW_HEIGHT))
     screen.blit(background, (0, 0))
 
 class ImageElement:
-    """
-    This class is used to show images on the screen.
-
-    Attributes:
-        screen: The window screen to show the images on.
-        cell_side (int): The side length of each cell.
-        cell_size tuple (int, int): The size of each cell.
-        empty_img (image): The image of an empty cell (cell that contains nothing).
-        unknown_img (image): The image of a cell which has not been visited.
-        agent_img (image): The image of the agent.
-        die_img (image): The image of the agent when he dies.
-        shoot_img (image): The image of the arrow when the agent shoots.
-        gold_img (image): The image of the gold chest.
-        wumpus_img (image): The image of the Wumpus.
-        stench_img (image): The image of the stench surrounding a Wumpus.
-        scream_img (image): The image of the scream sound when the Wumpus dies.
-        pit_img (image): The image of the pit.
-        breeze_img (image): The image of the breeze surrounding a pit.
-        poisonous_gas_img (image): The image of the poisonous gas.
-        whiff_img (image): The image of the whiff surrounding the poisonous gas.
-        healing_potion_img (image): The image of the healing potion.
-        glow_img (image): The image of the glow surrounding the healing potion.
-        
-        # Faded versions for unknown cells
-        faded_wumpus_img (image): Faded version of Wumpus image.
-        faded_pit_img (image): Faded version of pit image.
-        faded_stench_img (image): Faded version of stench image.
-        faded_breeze_img (image): Faded version of breeze image.
-    """
     def __init__(self, screen, cell_side=60):
         self.screen = screen
         self.cell_side = cell_side
@@ -60,16 +28,14 @@ class ImageElement:
         self.unknown_img = pygame.image.load('ui/assets/unknown.png')
         self.unknown_img = pygame.transform.scale(self.unknown_img, self.cell_size)
         
-        #https://www.clipartmax.com/download/m2i8A0H7b1Z5d3Z5_miner-miner-png/
         self.agent_img = pygame.image.load('ui/assets/agent.png')
         self.agent_img = pygame.transform.scale(self.agent_img, self.cell_size)
-        #https://www.pngwing.com/en/free-png-yeezt
+
         self.die_img = pygame.image.load('ui/assets/dies.png')
         self.die_img = pygame.transform.scale(self.die_img, self.cell_size)
-        #https://pngtree.com/freepng/vector-of-png-bow-arrow_7258676.html
+     
         self.shoot_img = pygame.image.load('ui/assets/shoot.png')
         self.shoot_img = pygame.transform.scale(self.shoot_img, self.cell_size)
-        #https://www.hiclipart.com/free-transparent-background-png-clipart-iyjih
         self.gold_img = pygame.image.load('ui/assets/gold.png')
         self.gold_img = pygame.transform.scale(self.gold_img, self.cell_size)
         
@@ -106,8 +72,6 @@ class ImageElement:
         self.screen.blit(self.unknown_img, (BOARD_APPEEAR_WIDTH + j*self.cell_side, BOARD_APPEEAR_HEIGHT + (h - 1 - i)*self.cell_side))
     
     def showUnknownWithOverlay(self, i, j, h, cell_data):
-        """Show unknown cell with faded overlay of actual content"""
-        # First show the unknown background
         self.showUnknown(i, j, h)
         
         # Then overlay faded content

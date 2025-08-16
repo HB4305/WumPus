@@ -477,7 +477,6 @@ def showAgentMove(_, path, maps_data, __, list_env, agent_mode, agent_index=0):
             dirs = ["NORTH", "WEST", "SOUTH", "EAST"]
             idx = dirs.index(current_direction)
             current_direction = dirs[(idx + 1) % 4]
-            # M2.showAgent(y, x, M2.h)
             if not agent_died and not (action in ['Climb', 'CLIMB'] and x == 0 and y == 0):
                 M2.showAgent(y, x, M2.h)
 
@@ -488,7 +487,6 @@ def showAgentMove(_, path, maps_data, __, list_env, agent_mode, agent_index=0):
             dirs = ["NORTH", "EAST", "SOUTH", "WEST"]
             idx = dirs.index(current_direction)
             current_direction = dirs[(idx + 1) % 4]
-            # M2.showAgent(y, x, M2.h)
             if not agent_died and not (action in ['Climb', 'CLIMB'] and x == 0 and y == 0):
                 M2.showAgent(y, x, M2.h)
 
@@ -508,7 +506,6 @@ def showAgentMove(_, path, maps_data, __, list_env, agent_mode, agent_index=0):
             if x == 0 and y == 0:
                 M2.showPath(y, x) 
                 agent_died = True
-                # Có thể thêm hiệu ứng climb out ở đây nếu cần
                 pygame.display.flip()
                 pygame.time.wait(500)
 
@@ -729,13 +726,7 @@ def showAgentMove(_, path, maps_data, __, list_env, agent_mode, agent_index=0):
         for kx, ky in killed_wumpus_positions:
             if 0 <= kx < map_size and 0 <= ky < map_size:
                 M2.showEmpty(ky, kx, M2.h)
-        # M2.showAgent(y, x, M2.h)
         
-        # # Chỉ hiển thị agent nếu chưa chết và không climb out
-        # if not agent_died:
-        #     M2.showAgent(y, x, M2.h)
-        # elif agent_died and action == 'DIE':
-        #     M2.showDie(y, x, M2.h)  # Hiển thị mộ nếu agent chết
         if not agent_died:
         # Chỉ hiển thị agent nếu không ở trạng thái CLIMB tại (0,0)
             if not (action in ['Climb', 'CLIMB'] and x == 0 and y == 0):

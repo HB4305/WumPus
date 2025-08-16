@@ -126,23 +126,7 @@ class Choice:
             if element[0]:
                 return element
         return 0
-    
-    # def get_back_to(self):
-    #     if self.is_click_back:
-    #         self.is_click_back = False
-    #         res = self.option_back_to
-    #         self.option_back_to = None
-    #         return res
-    #     return 0
-    
-    # def get_next_to(self):
-    #     if self.is_click_next:
-    #         self.is_click_next = False
-    #         res = self.option_next_to
-    #         self.option_next_to = None
-    #         return res
-    #     return 0
-    
+      
     def get_back_to(self, des, curr):
         if self.is_click_back:
             self.is_click_back = False
@@ -171,8 +155,6 @@ class Choice:
             height = WINDOW_HEIGHT
         
         if self.title_obj == '':
-            # back_button = BackButton(self.screen)
-            # next_button = NextButton(self.screen)
             
             if can_back:
                 BackButton(self.screen)
@@ -182,11 +164,9 @@ class Choice:
             if is_left:
                 is_left = False
                 self.is_click_back = True
-                # self.option_back_to = back_button.back_to(self.is_click_back, None, 0)
             elif is_right:
                 is_right = False
                 self.is_click_next = True
-                # self.option_next_to = next_button.next_to(self.is_click_next, -1, 0)
         if is_enter:
             is_enter = False
             self.option_result = self.get_choice()
