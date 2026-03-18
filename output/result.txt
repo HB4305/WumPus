@@ -1,4 +1,4 @@
-== WUMPUS WORLD AGENT RESULT ==
+= WUMPUS WORLD AGENT RESULT ==
 
 Final score: -26
 Gold collected: No
